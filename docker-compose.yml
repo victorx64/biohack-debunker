@@ -47,8 +47,7 @@ services:
       - ./:/app
     environment:
       ANALYSIS_BASE_URL: http://analysis-service:8002
-    command: >
-      bash -lc "apt-get update && apt-get install -y curl && bash scripts/test_analysis_service_stub.sh"
+    command: python services/analysis-service/tests/integration/run_analysis_stub.py
     depends_on:
       - analysis-service
 
@@ -62,8 +61,7 @@ services:
     environment:
       ANALYSIS_BASE_URL: http://analysis-service:8002
       ANALYSIS_REQUIRE_REAL: ${ANALYSIS_REQUIRE_REAL:-0}
-    command: >
-      bash -lc "apt-get update && apt-get install -y curl && bash scripts/test_analysis_service_real.sh"
+    command: python services/analysis-service/tests/integration/run_analysis_real.py
     depends_on:
       - analysis-service
 
@@ -74,8 +72,7 @@ services:
       - ./:/app
     environment:
       RESEARCH_BASE_URL: http://research-service:8003
-    command: >
-      bash -lc "apt-get update && apt-get install -y curl && bash scripts/test_research_service_stub.sh"
+    command: python services/research-service/tests/integration/run_research_stub.py
     depends_on:
       - research-service
 
@@ -89,8 +86,7 @@ services:
     environment:
       RESEARCH_BASE_URL: http://research-service:8003
       RESEARCH_REQUIRE_REAL: ${RESEARCH_REQUIRE_REAL:-0}
-    command: >
-      bash -lc "apt-get update && apt-get install -y curl && bash scripts/test_research_service_real.sh"
+    command: python services/research-service/tests/integration/run_research_real.py
     depends_on:
       - research-service
 

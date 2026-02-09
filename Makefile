@@ -1,3 +1,5 @@
+.PHONY: up down logs research-logs test-analysis-real test-analysis-stub test-research-real test-research-stub
+
 up:
 	docker compose up -d --build
 
