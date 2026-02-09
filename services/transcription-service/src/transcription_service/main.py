@@ -55,7 +55,7 @@ async def transcribe(request: TranscriptionRequest) -> TranscriptionResponse:
 
     client: YouTubeClient = app.state.youtube_client
     try:
-        result = await client.fetch_transcript(request.youtube_url, request.language)
+        result = await client.fetch_transcript(request.youtube_url)
     except TranscriptFetchError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     except Exception as exc:

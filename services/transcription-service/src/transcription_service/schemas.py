@@ -7,7 +7,6 @@ from pydantic import BaseModel, Field
 
 class TranscriptionRequest(BaseModel):
     youtube_url: str = Field(..., min_length=10)
-    language: str | None = None
 
 
 class VideoMetadata(BaseModel):

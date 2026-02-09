@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from dataclasses import dataclass
 from typing import Dict, List
 
@@ -37,9 +38,9 @@ class YouTubeClient:
     def __init__(self, http_client: httpx.AsyncClient) -> None:
         self._http_client = http_client
 
-    async def fetch_transcript(self, url: str, language: str | None = None) -> TranscriptResult:
+    async def fetch_transcript(self, url: str) -> TranscriptResult:
         info = await asyncio.to_thread(self._extract_info, url)
-        choice = self._pick_caption(info, language)
+        choice = self._pick_caption(info)
         caption_text = await self._download_caption(choice.url)
         segments = parse_captions(caption_text, choice.ext)
         if not segments:
@@ -81,42 +82,125 @@ class YouTubeClient:
         response.raise_for_status()
         return response.text
 
-    def _pick_caption(self, info: Dict, language: str | None) -> _CaptionChoice:
+    def _pick_caption(self, info: Dict) -> _CaptionChoice:
         subtitles = info.get("subtitles") or {}
         auto_captions = info.get("automatic_captions") or {}
 
-        preferred = self._preferred_languages(language)
-        manual_choice = self._select_caption(subtitles, preferred, is_auto=False)
+        # Prefer original audio language from metadata.
+        original_language = self._video_language(info)
+        if original_language:
+            manual_choice = self._select_caption_for_language(
+                subtitles,
+                original_language,
+                is_auto=False,
+                prefer_original=True,
+            )
+            if manual_choice:
+                self._log_choice(manual_choice, info)
+                return manual_choice
+
+            auto_choice = self._select_caption_for_language(
+                auto_captions,
+                original_language,
+                is_auto=True,
+                prefer_original=True,
+            )
+            if auto_choice:
+                self._log_choice(auto_choice, info)
+                return auto_choice
+
+            manual_choice = self._select_caption_for_language(
+                subtitles,
+                original_language,
+                is_auto=False,
+                prefer_original=False,
+            )
+            if manual_choice:
+                self._log_choice(manual_choice, info)
+                return manual_choice
+
+            auto_choice = self._select_caption_for_language(
+                auto_captions,
+                original_language,
+                is_auto=True,
+                prefer_original=False,
+            )
+            if auto_choice:
+                self._log_choice(auto_choice, info)
+                return auto_choice
+
+        # Fallbacks when original language is missing from metadata.
+        manual_choice = self._select_caption_any(subtitles, is_auto=False, prefer_original=True)
         if manual_choice:
+            self._log_choice(manual_choice, info)
             return manual_choice
 
-        auto_choice = self._select_caption(auto_captions, preferred, is_auto=True)
+        auto_choice = self._select_caption_any(auto_captions, is_auto=True, prefer_original=True)
         if auto_choice:
+            self._log_choice(auto_choice, info)
+            return auto_choice
+
+        manual_choice = self._select_caption_any(subtitles, is_auto=False, prefer_original=False)
+        if manual_choice:
+            self._log_choice(manual_choice, info)
+            return manual_choice
+
+        auto_choice = self._select_caption_any(auto_captions, is_auto=True, prefer_original=False)
+        if auto_choice:
+            self._log_choice(auto_choice, info)
             return auto_choice
 
         raise TranscriptFetchError("No subtitles or automatic captions available")
 
-    def _preferred_languages(self, language: str | None) -> List[str]:
-        if language:
-            base = language.split("-")[0]
-            return [language, base]
-        return ["en", "en-US", "en-GB", "en-CA", "en-AU"]
+    def _log_choice(self, choice: _CaptionChoice, info: Dict) -> None:
+        logger = logging.getLogger(__name__)
+        logger.info(
+            "Selected captions language=%s auto=%s ext=%s video_language=%s",
+            choice.language,
+            choice.is_auto,
+            choice.ext,
+            info.get("language"),
+        )
 
-    def _select_caption(
+    def _select_caption_any(
         self,
         caption_map: Dict[str, List[Dict]],
-        preferred: List[str],
         is_auto: bool,
+        prefer_original: bool,
     ) -> _CaptionChoice | None:
-        for lang in preferred:
-            entry = self._pick_format(caption_map.get(lang) or [])
-            if entry:
-                return _CaptionChoice(lang, entry["url"], entry["ext"], is_auto)
-
         for lang in sorted(caption_map.keys()):
-            entry = self._pick_format(caption_map.get(lang) or [])
+            entry = self._pick_best_entry(caption_map.get(lang) or [], prefer_original)
             if entry:
                 return _CaptionChoice(lang, entry["url"], entry["ext"], is_auto)
+        return None
+
+    def _select_caption_for_language(
+        self,
+        caption_map: Dict[str, List[Dict]],
+        language: str,
+        is_auto: bool,
+        prefer_original: bool,
+    ) -> _CaptionChoice | None:
+        entry = self._pick_best_entry(caption_map.get(language) or [], prefer_original)
+        if entry:
+            return _CaptionChoice(language, entry["url"], entry["ext"], is_auto)
+        return None
+
+    def _pick_best_entry(self, entries: List[Dict], prefer_original: bool) -> Dict | None:
+        if not entries:
+            return None
+        if prefer_original:
+            original_entries = [entry for entry in entries if not entry.get("is_translated")]
+            entry = self._pick_format(original_entries)
+            if entry:
+                return entry
+        return self._pick_format(entries)
+
+    def _video_language(self, info: Dict) -> str | None:
+        for key in ("language", "audio_language", "original_language"):
+            value = info.get(key)
+            if value:
+                return value
         return None
 
     def _pick_format(self, entries: List[Dict]) -> Dict | None:
