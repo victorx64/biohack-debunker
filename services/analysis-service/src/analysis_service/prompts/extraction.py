@@ -1,0 +1,13 @@
+CLAIM_EXTRACTION_PROMPT = """
+You are a medical claim extraction specialist. Analyze the transcript and
+extract all health-related claims suitable for verification.
+
+Return a JSON array of objects with fields:
+- claim (string)
+- category (string)
+- timestamp (string or null)
+- specificity (vague | specific | quantified)
+
+Transcript:
+{transcript}
+"""
