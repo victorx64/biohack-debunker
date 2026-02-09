@@ -40,8 +40,7 @@ class LLMClient:
         raise RuntimeError(f"Unsupported provider: {self.provider}")
 
     async def _openai_json(self, system_prompt: str, user_prompt: str) -> Any:
-        base_url = (self.base_url or os.getenv("OPENAI_BASE_URL") or "https://api.openai.com").rstrip("/")
-        url = f"{base_url}/v1/chat/completions"
+        url = f"{self.base_url}/v1/chat/completions"
         headers = {"Authorization": f"Bearer {self.api_key}"}
         payload = {
             "model": self.model,
@@ -60,8 +59,7 @@ class LLMClient:
         return json.loads(_extract_json(content))
 
     async def _anthropic_json(self, system_prompt: str, user_prompt: str) -> Any:
-        base_url = (self.base_url or os.getenv("ANTHROPIC_BASE_URL") or "https://api.anthropic.com").rstrip("/")
-        url = f"{base_url}/v1/messages"
+        url = f"{self.base_url}/v1/messages"
         headers = {
             "x-api-key": self.api_key or "",
             "anthropic-version": "2023-06-01",

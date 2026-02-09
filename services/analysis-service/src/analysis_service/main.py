@@ -51,17 +51,19 @@ LLM_TEMPERATURE = _env_float("LLM_TEMPERATURE", 0.2)
 LLM_MAX_TOKENS = _env_int("LLM_MAX_TOKENS", 800)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL") or "https://api.openai.com"
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-
+ANTHROPIC_BASE_URL = os.getenv("ANTHROPIC_BASE_URL") or "https://api.anthropic.com"
 
 @app.on_event("startup")
 async def startup() -> None:
     api_key = OPENAI_API_KEY if LLM_PROVIDER == "openai" else ANTHROPIC_API_KEY
+    base_url = OPENAI_BASE_URL if LLM_PROVIDER == "openai" else ANTHROPIC_BASE_URL
     app.state.llm_client = LLMClient(
         provider=LLM_PROVIDER,
         model=LLM_MODEL,
         api_key=api_key,
-        base_url=None,
+        base_url=base_url,
         temperature=LLM_TEMPERATURE,
         max_tokens=LLM_MAX_TOKENS,
     )
