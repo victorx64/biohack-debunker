@@ -5,10 +5,10 @@ import pytest
 
 
 @pytest.mark.anyio
-async def test_transcription_real_response() -> None:
-    youtube_url = os.getenv("TRANSCRIPTION_REAL_URL")
+async def test_transcription_response() -> None:
+    youtube_url = os.getenv("TRANSCRIPTION_URL")
     if not youtube_url:
-        pytest.skip("TRANSCRIPTION_REAL_URL is not set")
+        pytest.skip("TRANSCRIPTION_URL is not set")
 
     from transcription_service import main as main_module
 

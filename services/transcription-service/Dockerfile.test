@@ -12,4 +12,4 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 ENV PYTHONUNBUFFERED=1
 
-CMD ["pytest", "tests/integration/test_transcription_real.py"]
+CMD ["pytest", "tests/integration/test_transcription.py"]

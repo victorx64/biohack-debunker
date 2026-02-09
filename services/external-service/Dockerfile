@@ -13,4 +13,4 @@ ENV PYTHONUNBUFFERED=1
 
 EXPOSE 9010
 
-CMD ["uvicorn", "mock_external_service.main:app", "--host", "0.0.0.0", "--port", "9010"]
+CMD ["uvicorn", "external_service.main:app", "--host", "0.0.0.0", "--port", "9010"]

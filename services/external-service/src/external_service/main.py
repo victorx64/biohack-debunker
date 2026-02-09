@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 
 from fastapi import FastAPI, Request
 
-app = FastAPI(title="Mock External Service", version="0.1.0")
+app = FastAPI(title="External Service", version="0.1.0")
 
 
 def _tavily_results(query: str, max_results: int) -> List[Dict[str, Any]]:

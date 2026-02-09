@@ -1,27 +1,27 @@
 services:
   analysis-service:
     depends_on:
-      - mock-external-service
+      - external-service
     environment:
       LLM_PROVIDER: openai
       LLM_MODEL: mock-model
       OPENAI_API_KEY: mock-key
-      OPENAI_BASE_URL: http://mock-external-service:9010
+      OPENAI_BASE_URL: http://external-service:9010
 
   research-service:
     depends_on:
-      - mock-external-service
+      - external-service
     environment:
       TAVILY_API_KEY: mock-key
-      TAVILY_BASE_URL: http://mock-external-service:9010/tavily
-      PUBMED_BASE_URL: http://mock-external-service:9010/pubmed
+      TAVILY_BASE_URL: http://external-service:9010/tavily
+      PUBMED_BASE_URL: http://external-service:9010/pubmed
 
-  mock-external-service:
-    build: ./services/mock-external-service
+  external-service:
+    build: ./services/external-service
     ports:
       - "9010:9010"
 
-  test-analysis-mock:
+  test-analysis:
     build:
       context: ./services/test-runner
     working_dir: /app
@@ -31,13 +31,13 @@ services:
       - .env
     environment:
       ANALYSIS_BASE_URL: http://analysis-service:8002
-    command: pytest services/analysis-service/tests/integration/test_analysis_real.py
+    command: pytest services/analysis-service/tests/integration/test_analysis.py
     depends_on:
       - analysis-service
       - research-service
-      - mock-external-service
+      - external-service
 
-  test-research-mock:
+  test-research:
     build:
       context: ./services/test-runner
     working_dir: /app
@@ -47,19 +47,19 @@ services:
       - .env
     environment:
       RESEARCH_BASE_URL: http://research-service:8003
-    command: pytest services/research-service/tests/integration/test_research_real.py
+    command: pytest services/research-service/tests/integration/test_research.py
     depends_on:
       - research-service
       - qdrant
-      - mock-external-service
+      - external-service
 
-  test-transcription-mock:
+  test-transcription:
     build:
       context: ./services/transcription-service
       dockerfile: Dockerfile.test
     environment:
-      TRANSCRIPTION_REAL_URL: mock://video
+      TRANSCRIPTION_URL: mock://video
       YTDLP_BIN: /app/tests/mock-yt-dlp
-    command: pytest tests/integration/test_transcription_real.py
+    command: pytest tests/integration/test_transcription.py
     depends_on:
       - transcription-service
