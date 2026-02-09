@@ -1,4 +1,24 @@
 services:
+  analysis-service:
+    build: ./services/analysis-service
+    ports:
+      - "8002:8002"
+    env_file:
+      - .env
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      LLM_PROVIDER: ${LLM_PROVIDER:-stub}
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.2}
+      LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-800}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      RESEARCH_SERVICE_URL: ${RESEARCH_SERVICE_URL:-http://research-service:8003}
+      ANALYSIS_MAX_CONCURRENT_RESEARCH: ${ANALYSIS_MAX_CONCURRENT_RESEARCH:-5}
+    depends_on:
+      - research-service
+
   research-service:
     build: ./services/research-service
     ports:
@@ -17,6 +37,60 @@ services:
       RESEARCH_SERVICE_PORT: ${RESEARCH_SERVICE_PORT:-8003}
     depends_on:
       - qdrant
+
+  test-analysis-stub:
+    image: python:3.12-slim
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      ANALYSIS_BASE_URL: http://analysis-service:8002
+    command: >
+      bash -lc "apt-get update && apt-get install -y curl && bash scripts/test_analysis_service_stub.sh"
+    depends_on:
+      - analysis-service
+
+  test-analysis-real:
+    image: python:3.12-slim
+    working_dir: /app
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    environment:
+      ANALYSIS_BASE_URL: http://analysis-service:8002
+      ANALYSIS_REQUIRE_REAL: ${ANALYSIS_REQUIRE_REAL:-0}
+    command: >
+      bash -lc "apt-get update && apt-get install -y curl && bash scripts/test_analysis_service_real.sh"
+    depends_on:
+      - analysis-service
+
+  test-research-stub:
+    image: python:3.12-slim
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      RESEARCH_BASE_URL: http://research-service:8003
+    command: >
+      bash -lc "apt-get update && apt-get install -y curl && bash scripts/test_research_service_stub.sh"
+    depends_on:
+      - research-service
+
+  test-research-real:
+    image: python:3.12-slim
+    working_dir: /app
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    environment:
+      RESEARCH_BASE_URL: http://research-service:8003
+      RESEARCH_REQUIRE_REAL: ${RESEARCH_REQUIRE_REAL:-0}
+    command: >
+      bash -lc "apt-get update && apt-get install -y curl && bash scripts/test_research_service_real.sh"
+    depends_on:
+      - research-service
 
   qdrant:
     image: qdrant/qdrant:latest

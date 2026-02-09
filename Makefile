@@ -10,8 +10,14 @@ logs:
 research-logs:
 	docker compose logs -f --tail=200 research-service
 
+test-analysis-real:
+	docker compose run --rm test-analysis-real
+
+test-analysis-stub:
+	docker compose run --rm test-analysis-stub
+
 test-research-real:
-	set -a && source .env && set +a && bash scripts/test_research_service_real.sh
+	docker compose run --rm test-research-real
 
 test-research-stub:
-	set -a && source .env && set +a && bash scripts/test_research_service_stub.sh
+	docker compose run --rm test-research-stub
