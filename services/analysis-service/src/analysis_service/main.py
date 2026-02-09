@@ -3,7 +3,8 @@ from __future__ import annotations
 import asyncio
 import os
 import time
-from typing import List
+from contextlib import asynccontextmanager
+from typing import AsyncIterator, List
 
 import httpx
 from fastapi import FastAPI, HTTPException
@@ -39,8 +40,6 @@ def _join_url(base: str, path: str) -> str:
     return f"{base.rstrip('/')}/{path.lstrip('/')}"
 
 
-app = FastAPI(title="Analysis Service", version="0.1.0")
-
 RESEARCH_SERVICE_BASE = os.getenv("RESEARCH_SERVICE_URL", "http://research-service:8003")
 RESEARCH_ENDPOINT = _join_url(RESEARCH_SERVICE_BASE, "/research")
 MAX_CONCURRENT_RESEARCH = _env_int("ANALYSIS_MAX_CONCURRENT_RESEARCH", 5)
@@ -55,8 +54,9 @@ OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL") or "https://api.openai.com"
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 ANTHROPIC_BASE_URL = os.getenv("ANTHROPIC_BASE_URL") or "https://api.anthropic.com"
 
-@app.on_event("startup")
-async def startup() -> None:
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     api_key = OPENAI_API_KEY if LLM_PROVIDER == "openai" else ANTHROPIC_API_KEY
     base_url = OPENAI_BASE_URL if LLM_PROVIDER == "openai" else ANTHROPIC_BASE_URL
     app.state.llm_client = LLMClient(
@@ -68,11 +68,13 @@ async def startup() -> None:
         max_tokens=LLM_MAX_TOKENS,
     )
     app.state.http_client = httpx.AsyncClient(timeout=30)
+    try:
+        yield
+    finally:
+        await app.state.http_client.aclose()
 
 
-@app.on_event("shutdown")
-async def shutdown() -> None:
-    await app.state.http_client.aclose()
+app = FastAPI(title="Analysis Service", version="0.1.0", lifespan=lifespan)
 
 
 @app.get("/health", response_model=HealthResponse)
