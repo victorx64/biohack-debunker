@@ -22,7 +22,8 @@ services:
       - "9010:9010"
 
   test-analysis-mock:
-    image: python:3.12-slim
+    build:
+      context: ./services/test-runner
     working_dir: /app
     volumes:
       - ./:/app
@@ -30,14 +31,15 @@ services:
       - .env
     environment:
       ANALYSIS_BASE_URL: http://analysis-service:8002
-    command: python services/analysis-service/tests/integration/run_analysis_real.py
+    command: pytest services/analysis-service/tests/integration/test_analysis_real.py
     depends_on:
       - analysis-service
       - research-service
       - mock-external-service
 
   test-research-mock:
-    image: python:3.12-slim
+    build:
+      context: ./services/test-runner
     working_dir: /app
     volumes:
       - ./:/app
@@ -45,7 +47,7 @@ services:
       - .env
     environment:
       RESEARCH_BASE_URL: http://research-service:8003
-    command: python services/research-service/tests/integration/run_research_real.py
+    command: pytest services/research-service/tests/integration/test_research_real.py
     depends_on:
       - research-service
       - qdrant

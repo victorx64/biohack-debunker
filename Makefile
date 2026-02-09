@@ -22,7 +22,7 @@ test-transcription-mock:
 	docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test-transcription-mock
 
 test-mock-integration:
-	docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build mock-external-service research-service analysis-service
+	docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build mock-external-service research-service analysis-service transcription-service
 	$(MAKE) test-analysis-mock
 	$(MAKE) test-research-mock
 	$(MAKE) test-transcription-mock
