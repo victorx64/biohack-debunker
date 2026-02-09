@@ -1,0 +1,24 @@
+services:
+  research-service:
+    build: ./services/research-service
+    ports:
+      - "8003:8003"
+    env_file:
+      - .env
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      RESEARCH_USE_STUBS: ${RESEARCH_USE_STUBS:-true}
+      RESEARCH_CACHE_TTL_SECONDS: ${RESEARCH_CACHE_TTL_SECONDS:-3600}
+      RESEARCH_USE_QDRANT: ${RESEARCH_USE_QDRANT:-false}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      QDRANT_HOST: ${QDRANT_HOST:-qdrant}
+      QDRANT_PORT: ${QDRANT_PORT:-6333}
+      RESEARCH_SERVICE_PORT: ${RESEARCH_SERVICE_PORT:-8003}
+    depends_on:
+      - qdrant
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
