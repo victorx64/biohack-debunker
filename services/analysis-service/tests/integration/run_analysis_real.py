@@ -49,12 +49,10 @@ def main() -> int:
 
     if not source_types:
         sys.exit("no evidence sources returned")
-    if "stub" in source_types:
-        sys.exit("stub sources detected in real mode")
     if not source_types.intersection({"tavily", "pubmed"}):
         sys.exit("expected tavily or pubmed sources")
 
-    print("analysis real integration tests passed")
+    print("analysis integration tests passed")
     return 0
 
 

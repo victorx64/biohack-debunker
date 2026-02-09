@@ -1,4 +1,4 @@
-.PHONY: up down logs research-logs test-analysis-real test-analysis-stub test-research-real test-research-stub
+.PHONY: up down logs research-logs test-mock-integration test-analysis-mock test-research-mock test-transcription-mock
 
 up:
 	docker compose up -d --build
@@ -12,14 +12,17 @@ logs:
 research-logs:
 	docker compose logs -f --tail=200 research-service
 
-test-analysis-real:
-	docker compose run --rm test-analysis-real
+test-analysis-mock:
+	docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test-analysis-mock
 
-test-analysis-stub:
-	docker compose run --rm test-analysis-stub
+test-research-mock:
+	docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test-research-mock
 
-test-research-real:
-	docker compose run --rm test-research-real
+test-transcription-mock:
+	docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test-transcription-mock
 
-test-research-stub:
-	docker compose run --rm test-research-stub
+test-mock-integration:
+	docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build mock-external-service research-service analysis-service
+	$(MAKE) test-analysis-mock
+	$(MAKE) test-research-mock
+	$(MAKE) test-transcription-mock

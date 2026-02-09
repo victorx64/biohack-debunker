@@ -5,15 +5,10 @@ import logging
 from dataclasses import dataclass
 from typing import Dict, List
 
-import httpx
-from yt_dlp import YoutubeDL
-
+from .errors import TranscriptFetchError
 from .schemas import TranscriptSegment, VideoMetadata
 from .transcript_parser import build_transcript, parse_captions
-
-
-class TranscriptFetchError(RuntimeError):
-    pass
+from .yt_dlp_runner import YtDlpRunner
 
 
 @dataclass(frozen=True)
@@ -35,13 +30,19 @@ class _CaptionChoice:
 
 
 class YouTubeClient:
-    def __init__(self, http_client: httpx.AsyncClient) -> None:
-        self._http_client = http_client
+    def __init__(self, runner: YtDlpRunner) -> None:
+        self._runner = runner
 
     async def fetch_transcript(self, url: str) -> TranscriptResult:
-        info = await asyncio.to_thread(self._extract_info, url)
+        info = await asyncio.to_thread(self._runner.extract_info, url)
         choice = self._pick_caption(info)
-        caption_text = await self._download_caption(choice.url)
+        caption_text = await asyncio.to_thread(
+            self._runner.download_caption,
+            url,
+            choice.language,
+            choice.is_auto,
+            choice.ext,
+        )
         segments = parse_captions(caption_text, choice.ext)
         if not segments:
             raise TranscriptFetchError("No usable captions found in subtitle file")
@@ -64,23 +65,6 @@ class YouTubeClient:
             is_auto=choice.is_auto,
             source_ext=choice.ext,
         )
-
-    def _extract_info(self, url: str) -> Dict:
-        ydl_opts = {
-            "quiet": True,
-            "no_warnings": True,
-            "skip_download": True,
-            "writesubtitles": True,
-            "writeautomaticsub": True,
-            "subtitlesformat": "vtt/srt",
-        }
-        with YoutubeDL(ydl_opts) as ydl:
-            return ydl.extract_info(url, download=False)
-
-    async def _download_caption(self, url: str) -> str:
-        response = await self._http_client.get(url)
-        response.raise_for_status()
-        return response.text
 
     def _pick_caption(self, info: Dict) -> _CaptionChoice:
         subtitles = info.get("subtitles") or {}

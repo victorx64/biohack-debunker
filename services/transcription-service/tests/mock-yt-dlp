@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+import json
+import os
+import sys
+
+
+def _arg_value(args, name, default=None):
+    if name in args:
+        idx = args.index(name)
+        if idx + 1 < len(args):
+            return args[idx + 1]
+    return default
+
+
+def _write_mock_subtitle(output_template, video_id, language, ext):
+    directory = os.path.dirname(output_template)
+    os.makedirs(directory, exist_ok=True)
+    path = os.path.join(directory, f"{video_id}.{language}.{ext}")
+    content = (
+        "WEBVTT\n\n"
+        "00:00:00.000 --> 00:00:02.000\n"
+        "Hello from mock captions.\n\n"
+        "00:00:02.000 --> 00:00:04.000\n"
+        "Second line of mock captions.\n"
+    )
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(content)
+
+
+def main() -> int:
+    args = sys.argv[1:]
+    video_id = "mock123"
+
+    if "-J" in args:
+        payload = {
+            "id": video_id,
+            "title": "Mock Video",
+            "channel": "Mock Channel",
+            "duration": 120,
+            "thumbnail": "https://example.com/mock.jpg",
+            "webpage_url": "mock://video",
+            "language": "en",
+            "subtitles": {
+                "en": [
+                    {
+                        "ext": "vtt",
+                        "url": "mock://captions",
+                        "is_translated": False,
+                    }
+                ]
+            },
+        }
+        sys.stdout.write(json.dumps(payload))
+        return 0
+
+    language = _arg_value(args, "--sub-lang", "en")
+    ext = _arg_value(args, "--sub-format", "vtt")
+    output_template = _arg_value(args, "-o")
+    if not output_template:
+        return 1
+
+    _write_mock_subtitle(output_template, video_id, language, ext)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

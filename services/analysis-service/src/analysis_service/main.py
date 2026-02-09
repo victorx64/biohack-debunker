@@ -44,7 +44,7 @@ RESEARCH_SERVICE_BASE = os.getenv("RESEARCH_SERVICE_URL", "http://research-servi
 RESEARCH_ENDPOINT = _join_url(RESEARCH_SERVICE_BASE, "/research")
 MAX_CONCURRENT_RESEARCH = _env_int("ANALYSIS_MAX_CONCURRENT_RESEARCH", 5)
 
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "stub").strip().lower()
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "").strip().lower()
 LLM_MODEL = os.getenv("LLM_MODEL")
 LLM_TEMPERATURE = _env_float("LLM_TEMPERATURE", 0.2)
 LLM_MAX_TOKENS = _env_int("LLM_MAX_TOKENS", 800)
@@ -94,9 +94,12 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
     llm: LLMClient = app.state.llm_client
     client: httpx.AsyncClient = app.state.http_client
     if not llm.enabled:
-        warnings.append("LLM not configured; using heuristic extraction and analysis.")
+        raise HTTPException(status_code=503, detail="LLM client is not configured")
 
-    claims = await extract_claims(request.transcript, request.max_claims, llm)
+    try:
+        claims = await extract_claims(request.transcript, request.max_claims, llm)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
     if not claims:
         raise HTTPException(status_code=400, detail="No claims extracted from transcript")
 
@@ -115,7 +118,10 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
                 )
         except Exception as exc:
             warnings.append(f"Research lookup failed for claim: {claim.claim[:80]} ({exc})")
-        analysis = await analyze_claim(claim.claim, sources, llm)
+        try:
+            analysis = await analyze_claim(claim.claim, sources, llm)
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
         return ClaimResult(
             claim=claim.claim,
             category=claim.category,
@@ -129,7 +135,10 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
         )
 
     results = await asyncio.gather(*(process_claim(item) for item in claims))
-    summary, overall_rating = await generate_report(results, llm)
+    try:
+        summary, overall_rating = await generate_report(results, llm)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     took_ms = int((time.perf_counter() - start) * 1000)
     return AnalysisResponse(

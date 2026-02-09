@@ -35,4 +35,3 @@ class TranscriptionResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str
-    use_stubs: bool

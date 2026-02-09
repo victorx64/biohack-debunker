@@ -8,7 +8,7 @@ services:
     environment:
       APP_ENV: ${APP_ENV:-development}
       APP_DEBUG: ${APP_DEBUG:-true}
-      LLM_PROVIDER: ${LLM_PROVIDER:-stub}
+      LLM_PROVIDER: ${LLM_PROVIDER:-}
       LLM_MODEL: ${LLM_MODEL:-}
       LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.2}
       LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-800}
@@ -30,67 +30,31 @@ services:
     environment:
       APP_ENV: ${APP_ENV:-development}
       APP_DEBUG: ${APP_DEBUG:-true}
-      RESEARCH_USE_STUBS: ${RESEARCH_USE_STUBS:-true}
       RESEARCH_CACHE_TTL_SECONDS: ${RESEARCH_CACHE_TTL_SECONDS:-3600}
       RESEARCH_USE_QDRANT: ${RESEARCH_USE_QDRANT:-false}
       TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      TAVILY_BASE_URL: ${TAVILY_BASE_URL:-https://api.tavily.com}
+      PUBMED_BASE_URL: ${PUBMED_BASE_URL:-https://eutils.ncbi.nlm.nih.gov/entrez/eutils}
       QDRANT_HOST: ${QDRANT_HOST:-qdrant}
       QDRANT_PORT: ${QDRANT_PORT:-6333}
       RESEARCH_SERVICE_PORT: ${RESEARCH_SERVICE_PORT:-8003}
     depends_on:
       - qdrant
 
-  test-analysis-stub:
-    image: python:3.12-slim
-    working_dir: /app
-    volumes:
-      - ./:/app
-    environment:
-      ANALYSIS_BASE_URL: http://analysis-service:8002
-    command: python services/analysis-service/tests/integration/run_analysis_stub.py
-    depends_on:
-      - analysis-service
-
-  test-analysis-real:
-    image: python:3.12-slim
-    working_dir: /app
-    volumes:
-      - ./:/app
+  transcription-service:
+    build: ./services/transcription-service
+    ports:
+      - "8001:8001"
     env_file:
       - .env
     environment:
-      ANALYSIS_BASE_URL: http://analysis-service:8002
-      ANALYSIS_REQUIRE_REAL: ${ANALYSIS_REQUIRE_REAL:-0}
-    command: python services/analysis-service/tests/integration/run_analysis_real.py
-    depends_on:
-      - analysis-service
-
-  test-research-stub:
-    image: python:3.12-slim
-    working_dir: /app
-    volumes:
-      - ./:/app
-    environment:
-      RESEARCH_BASE_URL: http://research-service:8003
-    command: python services/research-service/tests/integration/run_research_stub.py
-    depends_on:
-      - research-service
-
-  test-research-real:
-    image: python:3.12-slim
-    working_dir: /app
-    volumes:
-      - ./:/app
-    env_file:
-      - .env
-    environment:
-      RESEARCH_BASE_URL: http://research-service:8003
-      RESEARCH_REQUIRE_REAL: ${RESEARCH_REQUIRE_REAL:-0}
-    command: python services/research-service/tests/integration/run_research_real.py
-    depends_on:
-      - research-service
+      APP_ENV: ${APP_ENV:-development}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      TRANSCRIPTION_MAX_CHARS: ${TRANSCRIPTION_MAX_CHARS:-120000}
+      YTDLP_BIN: ${YTDLP_BIN:-yt-dlp}
 
   qdrant:
     image: qdrant/qdrant:latest
     ports:
       - "6333:6333"
+

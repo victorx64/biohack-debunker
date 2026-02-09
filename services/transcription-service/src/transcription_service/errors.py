@@ -1,0 +1,2 @@
+class TranscriptFetchError(RuntimeError):
+    pass

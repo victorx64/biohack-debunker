@@ -47,12 +47,10 @@ def main() -> int:
     results = response.get("results") or []
     if not results:
         sys.exit("no results in real mode")
-    if any(item.get("source_type") == "stub" for item in results):
-        sys.exit("stub results detected in real mode")
     if not any(item.get("source_type") in {"tavily", "pubmed"} for item in results):
         sys.exit("expected tavily or pubmed results")
 
-    print("real integration tests passed")
+    print("research integration tests passed")
     return 0
 
 

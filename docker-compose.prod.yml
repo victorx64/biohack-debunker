@@ -6,9 +6,10 @@ services:
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
-      RESEARCH_USE_STUBS: "false"
       RESEARCH_CACHE_TTL_SECONDS: "3600"
       RESEARCH_USE_QDRANT: "true"
+      TAVILY_BASE_URL: "https://api.tavily.com"
+      PUBMED_BASE_URL: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
       QDRANT_HOST: qdrant
       QDRANT_PORT: "6333"
       RESEARCH_SERVICE_PORT: "8003"

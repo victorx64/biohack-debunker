@@ -81,11 +81,16 @@ class LLMClient:
 
 
 def _extract_json(text: str) -> str:
-    start = text.find("{")
-    if start == -1:
-        start = text.find("[")
-    if start == -1:
+    object_start = text.find("{")
+    array_start = text.find("[")
+    if object_start == -1 and array_start == -1:
         return text
+    if object_start == -1:
+        start = array_start
+    elif array_start == -1:
+        start = object_start
+    else:
+        start = min(object_start, array_start)
     end = max(text.rfind("}"), text.rfind("]"))
     if end == -1:
         return text

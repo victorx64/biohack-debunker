@@ -9,48 +9,15 @@ from ..schemas import ClaimResult
 
 
 async def generate_report(claims: List[ClaimResult], llm: LLMClient) -> tuple[str | None, str | None]:
-    if llm.enabled:
-        try:
-            payload = REPORT_PROMPT.format(claims=_format_claims(claims))
-            data = await llm.generate_json("Report summary", payload)
-            summary = _normalize(data.get("summary")) if isinstance(data, dict) else None
-            overall = _normalize(data.get("overall_rating")) if isinstance(data, dict) else None
-            return summary, overall
-        except Exception:
-            pass
-    return _stub_report(claims)
-
-
-def _stub_report(claims: List[ClaimResult]) -> tuple[str | None, str | None]:
-    if not claims:
-        return "No claims were analyzed.", "mixed"
-    verdicts = [claim.verdict for claim in claims]
-    summary = _basic_summary(verdicts)
-    return summary, _overall_rating(verdicts)
-
-
-def _basic_summary(verdicts: List[str]) -> str:
-    supported = verdicts.count("supported")
-    partial = verdicts.count("partially_supported")
-    unsupported = verdicts.count("unsupported")
-    misleading = verdicts.count("misleading")
-    return (
-        f"Analyzed {len(verdicts)} claims: {supported} supported, {partial} partially supported, "
-        f"{unsupported} unsupported, {misleading} misleading."
-    )
-
-
-def _overall_rating(verdicts: List[str]) -> str:
-    if not verdicts:
-        return "mixed"
-    negative = verdicts.count("unsupported") + verdicts.count("misleading")
-    if negative == 0:
-        return "accurate"
-    if negative / len(verdicts) <= 0.25:
-        return "mostly_accurate"
-    if negative / len(verdicts) <= 0.6:
-        return "mixed"
-    return "misleading"
+    if not llm.enabled:
+        raise RuntimeError("LLM client is not configured")
+    payload = REPORT_PROMPT.format(claims=_format_claims(claims))
+    data = await llm.generate_json("Report summary", payload)
+    if not isinstance(data, dict):
+        raise RuntimeError("LLM response missing report fields")
+    summary = _normalize(data.get("summary"))
+    overall = _normalize(data.get("overall_rating"))
+    return summary, overall
 
 
 def _format_claims(claims: List[ClaimResult]) -> str:

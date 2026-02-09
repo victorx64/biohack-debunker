@@ -15,15 +15,12 @@ async def analyze_claim(
     sources: List[EvidenceSource],
     llm: LLMClient,
 ) -> ClaimAnalysis:
-    if llm.enabled:
-        try:
-            evidence = _format_evidence(sources)
-            prompt = CLAIM_ANALYSIS_PROMPT.format(claim=claim, evidence=evidence)
-            data = await llm.generate_json("Claim analysis", prompt)
-            return _coerce_analysis(data)
-        except Exception:
-            pass
-    return _stub_analysis(sources)
+    if not llm.enabled:
+        raise RuntimeError("LLM client is not configured")
+    evidence = _format_evidence(sources)
+    prompt = CLAIM_ANALYSIS_PROMPT.format(claim=claim, evidence=evidence)
+    data = await llm.generate_json("Claim analysis", prompt)
+    return _coerce_analysis(data)
 
 
 def _format_evidence(sources: List[EvidenceSource]) -> str:
@@ -48,7 +45,7 @@ def _format_evidence(sources: List[EvidenceSource]) -> str:
 
 def _coerce_analysis(data: object) -> ClaimAnalysis:
     if not isinstance(data, dict):
-        return _stub_analysis([])
+        raise RuntimeError("LLM response missing analysis fields")
     verdict = str(data.get("verdict") or "unsupported").strip()
     confidence = float(data.get("confidence") or 0.5)
     explanation = str(data.get("explanation") or "Insufficient evidence available.").strip()
@@ -58,22 +55,6 @@ def _coerce_analysis(data: object) -> ClaimAnalysis:
         confidence=max(0.0, min(confidence, 1.0)),
         explanation=explanation,
         nuance=str(nuance).strip() if nuance else None,
-    )
-
-
-def _stub_analysis(sources: List[EvidenceSource]) -> ClaimAnalysis:
-    if not sources:
-        return ClaimAnalysis(
-            verdict="unsupported",
-            confidence=0.35,
-            explanation="No research sources were available to support this claim.",
-            nuance="Evidence may exist, but it was not retrieved.",
-        )
-    return ClaimAnalysis(
-        verdict="partially_supported",
-        confidence=0.6,
-        explanation="Some evidence sources relate to this claim, but strength and relevance vary.",
-        nuance="Treat as preliminary until higher-quality evidence is reviewed.",
     )
 
 

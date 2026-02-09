@@ -1,0 +1,63 @@
+services:
+  analysis-service:
+    depends_on:
+      - mock-external-service
+    environment:
+      LLM_PROVIDER: openai
+      LLM_MODEL: mock-model
+      OPENAI_API_KEY: mock-key
+      OPENAI_BASE_URL: http://mock-external-service:9010
+
+  research-service:
+    depends_on:
+      - mock-external-service
+    environment:
+      TAVILY_API_KEY: mock-key
+      TAVILY_BASE_URL: http://mock-external-service:9010/tavily
+      PUBMED_BASE_URL: http://mock-external-service:9010/pubmed
+
+  mock-external-service:
+    build: ./services/mock-external-service
+    ports:
+      - "9010:9010"
+
+  test-analysis-mock:
+    image: python:3.12-slim
+    working_dir: /app
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    environment:
+      ANALYSIS_BASE_URL: http://analysis-service:8002
+    command: python services/analysis-service/tests/integration/run_analysis_real.py
+    depends_on:
+      - analysis-service
+      - research-service
+      - mock-external-service
+
+  test-research-mock:
+    image: python:3.12-slim
+    working_dir: /app
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    environment:
+      RESEARCH_BASE_URL: http://research-service:8003
+    command: python services/research-service/tests/integration/run_research_real.py
+    depends_on:
+      - research-service
+      - qdrant
+      - mock-external-service
+
+  test-transcription-mock:
+    build:
+      context: ./services/transcription-service
+      dockerfile: Dockerfile.test
+    environment:
+      TRANSCRIPTION_REAL_URL: mock://video
+      YTDLP_BIN: /app/tests/mock-yt-dlp
+    command: pytest tests/integration/test_transcription_real.py
+    depends_on:
+      - transcription-service

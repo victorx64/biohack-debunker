@@ -10,7 +10,6 @@ async def test_transcription_real_response() -> None:
     if not youtube_url:
         pytest.skip("TRANSCRIPTION_REAL_URL is not set")
 
-    os.environ["TRANSCRIPTION_USE_STUBS"] = "false"
     from transcription_service import main as main_module
 
     async with main_module.app.router.lifespan_context(main_module.app):
