@@ -4,14 +4,6 @@ set -euo pipefail
 BASE_URL="${ANALYSIS_BASE_URL:-http://localhost:8002}"
 REQUIRE_REAL="${ANALYSIS_REQUIRE_REAL:-0}"
 
-if [[ -z "${TAVILY_API_KEY:-}" && "$REQUIRE_REAL" == "1" ]]; then
-  echo "TAVILY_API_KEY is required for real integration tests"
-  exit 1
-elif [[ -z "${TAVILY_API_KEY:-}" ]]; then
-  echo "TAVILY_API_KEY not set; skipping real integration tests"
-  exit 0
-fi
-
 request_payload=$(cat <<'JSON'
 {
   "transcript": "Omega-3 supplementation reduces triglycerides and may improve cardiovascular outcomes.",
