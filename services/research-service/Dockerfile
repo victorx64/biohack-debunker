@@ -3,6 +3,7 @@ FROM python:3.12-slim
 WORKDIR /app
 
 COPY pyproject.toml /app/
+COPY README.md /app/
 COPY src /app/src
 
 RUN pip install --no-cache-dir --upgrade pip \
