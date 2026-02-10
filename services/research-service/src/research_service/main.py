@@ -5,6 +5,7 @@ import time
 from typing import List
 
 from fastapi import FastAPI, HTTPException
+import redis.asyncio as redis
 
 from .pubmed_client import PubMedClient
 from .schemas import HealthResponse, ResearchRequest, ResearchResponse, ResearchSource
@@ -18,10 +19,26 @@ CACHE_TTL_SECONDS = int(os.getenv("RESEARCH_CACHE_TTL_SECONDS", "3600"))
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 TAVILY_BASE_URL = os.getenv("TAVILY_BASE_URL", "https://api.tavily.com")
 PUBMED_BASE_URL = os.getenv("PUBMED_BASE_URL", "https://eutils.ncbi.nlm.nih.gov/entrez/eutils")
+PUBMED_API_KEY = os.getenv("PUBMED_API_KEY")
+REDIS_URL = os.getenv("REDIS_URL")
+
+if not REDIS_URL:
+    raise RuntimeError("REDIS_URL is required for distributed PubMed rate limiting")
 
 cache = CacheStore(ttl_seconds=CACHE_TTL_SECONDS)
 tavily_client = TavilyClient(api_key=TAVILY_API_KEY, base_url=TAVILY_BASE_URL)
-pubmed_client = PubMedClient(base_url=PUBMED_BASE_URL)
+redis_client = redis.from_url(REDIS_URL)
+pubmed_client = PubMedClient(
+    base_url=PUBMED_BASE_URL,
+    api_key=PUBMED_API_KEY,
+    redis_client=redis_client,
+)
+
+
+@app.on_event("shutdown")
+async def shutdown() -> None:
+    if redis_client is not None:
+        await redis_client.close()
 
 
 @app.get("/health", response_model=HealthResponse)
