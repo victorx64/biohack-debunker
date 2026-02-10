@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Iterable, List
 from uuid import UUID, uuid4
 
@@ -20,7 +20,7 @@ class ClaimInsert:
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.utcnow()
 
 
 def _parse_timestamp(value: str | None) -> int | None:

@@ -63,3 +63,29 @@ services:
     command: pytest tests/integration/test_transcription.py
     depends_on:
       - transcription-service
+
+  test-gateway:
+    build:
+      context: ./services/test-runner
+    working_dir: /app
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    environment:
+      GATEWAY_BASE_URL: http://api-gateway:8000
+    command: pytest services/api-gateway/tests/integration/test_gateway.py
+    depends_on:
+      - api-gateway
+      - external-service
+      - analysis-service
+      - research-service
+      - transcription-service
+      - postgres
+      - redis
+
+  transcription-service:
+    environment:
+      YTDLP_BIN: /app/mock-yt-dlp
+    volumes:
+      - ./services/transcription-service/tests/mock-yt-dlp:/app/mock-yt-dlp

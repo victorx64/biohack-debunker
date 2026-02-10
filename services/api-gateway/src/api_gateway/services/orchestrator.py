@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List
 from uuid import UUID
 
@@ -38,7 +38,7 @@ class Orchestrator:
             )
             claims = self._map_claims(analysis.get("claims", []))
             await insert_claims_and_sources(pool, analysis_id, claims)
-            completed_at = datetime.now(timezone.utc)
+            completed_at = datetime.utcnow()
             await update_results(
                 pool,
                 analysis_id,

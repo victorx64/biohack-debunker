@@ -100,6 +100,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-biohack_debunker}
       POSTGRES_USER: ${POSTGRES_USER:-app}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure-password}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-biohack_debunker}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7
@@ -119,5 +124,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-app}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure-password}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
