@@ -42,8 +42,8 @@ class Settings:
         "ANALYSIS_SERVICE_URL", "http://analysis-service:8002"
     )
 
-    rate_limit_requests: int = _env_int("RATE_LIMIT_REQUESTS", 10)
-    rate_limit_window: int = _env_int("RATE_LIMIT_WINDOW", 3600)
+    rate_limit_requests: int = _env_int("RATE_LIMIT_REQUESTS", 120)
+    rate_limit_window: int = _env_int("RATE_LIMIT_WINDOW", 60)
 
     enable_public_feed: bool = _env_bool("ENABLE_PUBLIC_FEED", True)
     enable_billing: bool = _env_bool("ENABLE_BILLING", False)

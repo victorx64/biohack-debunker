@@ -13,7 +13,9 @@ def rate_limit_dependency(settings: Settings):
         if settings.rate_limit_requests <= 0:
             return
         client = request.client.host if request.client else "anonymous"
-        key = f"rate:{client}"
+        email = request.headers.get("x-user-email")
+        identifier = email or client
+        key = f"rate:{identifier}"
         try:
             count = await redis.incr(key)
             if count == 1:

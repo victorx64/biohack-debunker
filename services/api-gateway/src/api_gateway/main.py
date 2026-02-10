@@ -21,7 +21,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.settings = settings
     app.state.db = await create_pool(settings.database_dsn)
     app.state.redis = await create_redis(settings.redis_url)
-    app.state.http_client = httpx.AsyncClient(timeout=30)
+    app.state.http_client = httpx.AsyncClient(
+        timeout=httpx.Timeout(30.0, read=300.0)
+    )
     app.state.orchestrator = Orchestrator(app.state.http_client, settings)
     try:
         yield
