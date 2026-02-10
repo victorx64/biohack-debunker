@@ -10,17 +10,22 @@ from ..schemas import ClaimDraft
 logger = logging.getLogger("analysis_service.claim_extractor")
 
 
-async def extract_claims(transcript: str, max_claims: int, llm: LLMClient) -> List[ClaimDraft]:
+async def extract_claims(transcript: str, claims_per_chunk: int, llm: LLMClient) -> List[ClaimDraft]:
     if not llm.enabled:
         raise RuntimeError("LLM client is not configured")
-    logger.info("extracting claims transcript_len=%s max_claims=%s", len(transcript), max_claims)
+    logger.info(
+        "extracting claims transcript_len=%s per_chunk_limit=%s",
+        len(transcript),
+        claims_per_chunk,
+    )
     chunks = _chunk_transcript(transcript)
     collected: List[ClaimDraft] = []
     seen: set[str] = set()
     for index, chunk in enumerate(chunks, start=1):
-        if len(collected) >= max_claims:
-            break
-        payload = CLAIM_EXTRACTION_PROMPT.format(transcript=chunk)
+        payload = CLAIM_EXTRACTION_PROMPT.format(
+            transcript=chunk,
+            claims_per_chunk=claims_per_chunk,
+        )
         data = await llm.generate_json("Claim extraction", payload)
         claims = _coerce_claims(data)
         added = 0
@@ -31,8 +36,6 @@ async def extract_claims(transcript: str, max_claims: int, llm: LLMClient) -> Li
             seen.add(key)
             collected.append(claim)
             added += 1
-            if len(collected) >= max_claims:
-                break
         logger.info(
             "claims extracted chunk=%s/%s raw=%s added=%s total=%s",
             index,
@@ -41,7 +44,7 @@ async def extract_claims(transcript: str, max_claims: int, llm: LLMClient) -> Li
             added,
             len(collected),
         )
-    return collected[:max_claims]
+    return collected
 
 
 def _coerce_claims(data: object) -> List[ClaimDraft]:

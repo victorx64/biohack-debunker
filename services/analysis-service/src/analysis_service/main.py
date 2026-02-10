@@ -107,9 +107,9 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
     warnings: List[str] = []
 
     logger.info(
-        "analyze request transcript_len=%s max_claims=%s research_max_results=%s sources=%s",
+        "analyze request transcript_len=%s claims_per_chunk=%s research_max_results=%s sources=%s",
         len(request.transcript),
-        request.max_claims,
+        request.claims_per_chunk,
         request.research_max_results,
         ",".join(request.research_sources),
     )
@@ -121,7 +121,8 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
         raise HTTPException(status_code=503, detail="LLM client is not configured")
 
     try:
-        claims = await extract_claims(request.transcript, request.max_claims, llm)
+        logger.info("claim extraction started")
+        claims = await extract_claims(request.transcript, request.claims_per_chunk, llm)
     except Exception as exc:
         logger.exception("claim extraction failed")
         raise HTTPException(status_code=502, detail=str(exc)) from exc
@@ -133,7 +134,8 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
 
     semaphore = asyncio.Semaphore(MAX_CONCURRENT_RESEARCH)
 
-    async def process_claim(claim) -> ClaimResult:
+    async def process_claim(index: int, claim) -> ClaimResult:
+        logger.info("analysis progress claim=%s/%s stage=research", index, len(claims))
         sources: List[EvidenceSource] = []
         try:
             async with semaphore:
@@ -151,11 +153,13 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
                 claim.claim[:120],
                 exc,
             )
+        logger.info("analysis progress claim=%s/%s stage=verdict", index, len(claims))
         try:
             analysis = await analyze_claim(claim.claim, sources, llm)
         except Exception as exc:
             logger.exception("claim analysis failed claim=%s", claim.claim[:120])
             raise HTTPException(status_code=502, detail=str(exc)) from exc
+        logger.info("analysis progress claim=%s/%s stage=done", index, len(claims))
         return ClaimResult(
             claim=claim.claim,
             category=claim.category,
@@ -168,8 +172,11 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
             sources=sources,
         )
 
-    results = await asyncio.gather(*(process_claim(item) for item in claims))
+    results = await asyncio.gather(
+        *(process_claim(index, item) for index, item in enumerate(claims, start=1))
+    )
     try:
+        logger.info("report generation started")
         summary, overall_rating = await generate_report(results, llm)
     except Exception as exc:
         logger.exception("report generation failed")

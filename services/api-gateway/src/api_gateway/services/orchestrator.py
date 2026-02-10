@@ -60,7 +60,7 @@ class Orchestrator:
         url = f"{self._settings.analysis_service_url.rstrip('/')}/analyze"
         payload = {
             "transcript": transcript,
-            "max_claims": request.max_claims,
+            "claims_per_chunk": request.claims_per_chunk,
             "research_max_results": request.research_max_results,
             "research_sources": request.research_sources,
         }

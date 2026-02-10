@@ -4,6 +4,8 @@ extract all health-related claims suitable for verification.
 
 Return ONLY valid JSON. Do not include markdown, code fences, or extra text.
 
+Return a JSON array with at most {claims_per_chunk} objects. Do not exceed this limit.
+
 Return a JSON array of objects with fields:
 - claim (string)
 - category (string)

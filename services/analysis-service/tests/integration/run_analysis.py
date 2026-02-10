@@ -31,7 +31,7 @@ def main() -> int:
 
     payload = {
         "transcript": "Omega-3 supplementation reduces triglycerides and may improve cardiovascular outcomes.",
-        "max_claims": 2,
+        "claims_per_chunk": 2,
         "research_max_results": 3,
         "research_sources": ["tavily", "pubmed"],
     }

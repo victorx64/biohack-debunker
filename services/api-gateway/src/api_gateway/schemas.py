@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 class AnalysisCreateRequest(BaseModel):
     youtube_url: str = Field(..., min_length=10)
-    max_claims: int = Field(8, ge=1, le=30)
+    claims_per_chunk: int = Field(8, ge=1, le=30)
     research_max_results: int = Field(5, ge=1, le=20)
     research_sources: List[str] = Field(default_factory=lambda: ["tavily", "pubmed"])
     is_public: bool = True
