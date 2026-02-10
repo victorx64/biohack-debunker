@@ -64,8 +64,8 @@ async def research(request: ResearchRequest) -> ResearchResponse:
             results=cached.results,
             cached=True,
             took_ms=took_ms,
-            tavily_requests=0,
-            pubmed_requests=0,
+            tavily_requests=cached.tavily_requests,
+            pubmed_requests=cached.pubmed_requests,
         )
 
     results: List[ResearchSource] = []
