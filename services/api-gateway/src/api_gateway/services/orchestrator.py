@@ -61,6 +61,7 @@ class Orchestrator:
         payload = {
             "transcript": transcript,
             "claims_per_chunk": request.claims_per_chunk,
+            "chunk_size_chars": request.chunk_size_chars,
             "research_max_results": request.research_max_results,
             "research_sources": request.research_sources,
         }

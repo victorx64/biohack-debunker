@@ -10,15 +10,21 @@ from ..schemas import ClaimDraft
 logger = logging.getLogger("analysis_service.claim_extractor")
 
 
-async def extract_claims(transcript: str, claims_per_chunk: int, llm: LLMClient) -> List[ClaimDraft]:
+async def extract_claims(
+    transcript: str,
+    claims_per_chunk: int,
+    chunk_size_chars: int,
+    llm: LLMClient,
+) -> List[ClaimDraft]:
     if not llm.enabled:
         raise RuntimeError("LLM client is not configured")
     logger.info(
-        "extracting claims transcript_len=%s per_chunk_limit=%s",
+        "extracting claims transcript_len=%s per_chunk_limit=%s chunk_size_chars=%s",
         len(transcript),
         claims_per_chunk,
+        chunk_size_chars,
     )
-    chunks = _chunk_transcript(transcript)
+    chunks = _chunk_transcript(transcript, chunk_size_chars)
     collected: List[ClaimDraft] = []
     seen: set[str] = set()
     for index, chunk in enumerate(chunks, start=1):

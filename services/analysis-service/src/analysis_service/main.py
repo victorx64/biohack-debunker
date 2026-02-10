@@ -111,9 +111,10 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
     warnings: List[str] = []
 
     logger.info(
-        "analyze request transcript_len=%s claims_per_chunk=%s research_max_results=%s sources=%s",
+        "analyze request transcript_len=%s claims_per_chunk=%s chunk_size_chars=%s research_max_results=%s sources=%s",
         len(request.transcript),
         request.claims_per_chunk,
+        request.chunk_size_chars,
         request.research_max_results,
         ",".join(request.research_sources),
     )
@@ -126,7 +127,12 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
 
     try:
         logger.info("claim extraction started")
-        claims = await extract_claims(request.transcript, request.claims_per_chunk, llm)
+        claims = await extract_claims(
+            request.transcript,
+            request.claims_per_chunk,
+            request.chunk_size_chars,
+            llm,
+        )
     except Exception as exc:
         logger.exception("claim extraction failed")
         raise HTTPException(status_code=502, detail=str(exc)) from exc
