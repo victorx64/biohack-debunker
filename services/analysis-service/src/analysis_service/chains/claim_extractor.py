@@ -14,11 +14,34 @@ async def extract_claims(transcript: str, max_claims: int, llm: LLMClient) -> Li
     if not llm.enabled:
         raise RuntimeError("LLM client is not configured")
     logger.info("extracting claims transcript_len=%s max_claims=%s", len(transcript), max_claims)
-    payload = CLAIM_EXTRACTION_PROMPT.format(transcript=_trim(transcript))
-    data = await llm.generate_json("Claim extraction", payload)
-    claims = _coerce_claims(data)
-    logger.info("claims extracted raw=%s returned=%s", len(claims), min(len(claims), max_claims))
-    return claims[:max_claims]
+    chunks = _chunk_transcript(transcript)
+    collected: List[ClaimDraft] = []
+    seen: set[str] = set()
+    for index, chunk in enumerate(chunks, start=1):
+        if len(collected) >= max_claims:
+            break
+        payload = CLAIM_EXTRACTION_PROMPT.format(transcript=chunk)
+        data = await llm.generate_json("Claim extraction", payload)
+        claims = _coerce_claims(data)
+        added = 0
+        for claim in claims:
+            key = claim.claim.casefold()
+            if key in seen:
+                continue
+            seen.add(key)
+            collected.append(claim)
+            added += 1
+            if len(collected) >= max_claims:
+                break
+        logger.info(
+            "claims extracted chunk=%s/%s raw=%s added=%s total=%s",
+            index,
+            len(chunks),
+            len(claims),
+            added,
+            len(collected),
+        )
+    return collected[:max_claims]
 
 
 def _coerce_claims(data: object) -> List[ClaimDraft]:
@@ -49,8 +72,21 @@ def _normalize(value: object) -> str | None:
     return text or None
 
 
-def _trim(text: str, limit: int = 5000) -> str:
+def _chunk_transcript(text: str, limit: int = 5000) -> List[str]:
     if len(text) <= limit:
-        return text
-    logger.warning("transcript trimmed original_len=%s limit=%s", len(text), limit)
-    return text[:limit] + "..."
+        return [text]
+    chunks: List[str] = []
+    start = 0
+    length = len(text)
+    while start < length:
+        end = min(start + limit, length)
+        if end < length:
+            split_at = text.rfind(" ", start, end)
+            if split_at > start + 200:
+                end = split_at
+        chunk = text[start:end].strip()
+        if chunk:
+            chunks.append(chunk)
+        start = end
+    logger.info("transcript chunked original_len=%s chunks=%s limit=%s", len(text), len(chunks), limit)
+    return chunks

@@ -71,6 +71,10 @@ class LLMClient:
         try:
             return json.loads(_extract_json(content))
         except JSONDecodeError:
+            recovered = _recover_json_list(content)
+            if recovered is not None:
+                logger.warning("openai json decode recovered stage=%s items=%s", system_prompt, len(recovered))
+                return recovered
             snippet = (content or "")[:500]
             logger.error("openai json decode failed stage=%s content=%s", system_prompt, snippet)
             raise
@@ -105,6 +109,10 @@ class LLMClient:
         try:
             return json.loads(_extract_json(content))
         except JSONDecodeError:
+            recovered = _recover_json_list(content)
+            if recovered is not None:
+                logger.warning("anthropic json decode recovered stage=%s items=%s", system_prompt, len(recovered))
+                return recovered
             snippet = (content or "")[:500]
             logger.error("anthropic json decode failed stage=%s content=%s", system_prompt, snippet)
             raise
@@ -125,3 +133,26 @@ def _extract_json(text: str) -> str:
     if end == -1:
         return text
     return text[start : end + 1]
+
+
+def _recover_json_list(text: str) -> list[Any] | None:
+    extracted = _extract_json(text)
+    start = extracted.find("[")
+    if start == -1:
+        return None
+    decoder = json.JSONDecoder()
+    items: list[Any] = []
+    idx = start + 1
+    length = len(extracted)
+    while idx < length:
+        while idx < length and extracted[idx] in " \t\r\n,":
+            idx += 1
+        if idx >= length or extracted[idx] == "]":
+            break
+        try:
+            item, next_idx = decoder.raw_decode(extracted, idx)
+        except JSONDecodeError:
+            break
+        items.append(item)
+        idx = next_idx
+    return items or None

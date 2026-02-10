@@ -55,7 +55,7 @@ logger = logging.getLogger("analysis_service")
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "").strip().lower()
 LLM_MODEL = os.getenv("LLM_MODEL")
 LLM_TEMPERATURE = _env_float("LLM_TEMPERATURE", 0.2)
-LLM_MAX_TOKENS = _env_int("LLM_MAX_TOKENS", 4096)
+LLM_MAX_TOKENS = _env_int("LLM_MAX_TOKENS", 16384)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL") or "https://api.openai.com"
