@@ -22,10 +22,16 @@ services:
       ENABLE_BILLING: ${ENABLE_BILLING:-false}
       FREE_TIER_CREDITS: ${FREE_TIER_CREDITS:-3}
     depends_on:
-      - transcription-service
-      - analysis-service
-      - postgres
-      - redis
+      migrate:
+        condition: service_completed_successfully
+      transcription-service:
+        condition: service_started
+      analysis-service:
+        condition: service_started
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
 
   analysis-service:
     build: ./services/analysis-service
@@ -99,4 +105,19 @@ services:
     image: redis:7
     ports:
       - "6379:6379"
+
+  migrate:
+    build:
+      context: .
+      dockerfile: migrations/Dockerfile
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-biohack_debunker}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure-password}
+    depends_on:
+      - postgres
 
