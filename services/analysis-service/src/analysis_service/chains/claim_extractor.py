@@ -5,13 +5,13 @@ from typing import List
 
 from ..llm_client import LLMClient
 from ..prompts.extraction import CLAIM_EXTRACTION_PROMPT
-from ..schemas import ClaimDraft
+from ..schemas import ClaimDraft, TranscriptSegment
 
 logger = logging.getLogger("analysis_service.claim_extractor")
 
 
 async def extract_claims(
-    transcript: str,
+    segments: List[TranscriptSegment],
     claims_per_chunk: int,
     chunk_size_chars: int,
     llm: LLMClient,
@@ -19,12 +19,14 @@ async def extract_claims(
     if not llm.enabled:
         raise RuntimeError("LLM client is not configured")
     logger.info(
-        "extracting claims transcript_len=%s per_chunk_limit=%s chunk_size_chars=%s",
-        len(transcript),
+        "extracting claims segments=%s per_chunk_limit=%s chunk_size_chars=%s",
+        len(segments),
         claims_per_chunk,
         chunk_size_chars,
     )
-    chunks = _chunk_transcript(transcript, chunk_size_chars)
+    if not segments:
+        raise RuntimeError("Transcript segments are required for claim extraction")
+    chunks = _chunk_segments(segments, chunk_size_chars)
     collected: List[ClaimDraft] = []
     seen: set[str] = set()
     for index, chunk in enumerate(chunks, start=1):
@@ -86,21 +88,41 @@ def _normalize(value: object) -> str | None:
     return text or None
 
 
-def _chunk_transcript(text: str, limit: int = 5000) -> List[str]:
-    if len(text) <= limit:
-        return [text]
+def _chunk_segments(segments: List[TranscriptSegment], limit: int = 5000) -> List[str]:
+    if not segments:
+        return []
     chunks: List[str] = []
-    start = 0
-    length = len(text)
-    while start < length:
-        end = min(start + limit, length)
-        if end < length:
-            split_at = text.rfind(" ", start, end)
-            if split_at > start + 200:
-                end = split_at
-        chunk = text[start:end].strip()
-        if chunk:
-            chunks.append(chunk)
-        start = end
-    logger.info("transcript chunked original_len=%s chunks=%s limit=%s", len(text), len(chunks), limit)
+    current: List[str] = []
+    current_len = 0
+    for segment in segments:
+        text = segment.text.strip()
+        if not text:
+            continue
+        timestamp = _format_timestamp(segment.start)
+        line = f"[{timestamp}] {text}"
+        line_len = len(line) + 1
+        if current and current_len + line_len > limit:
+            chunks.append("\n".join(current))
+            current = []
+            current_len = 0
+        current.append(line)
+        current_len += line_len
+    if current:
+        chunks.append("\n".join(current))
+    logger.info(
+        "transcript segments chunked segments=%s chunks=%s limit=%s",
+        len(segments),
+        len(chunks),
+        limit,
+    )
     return chunks
+
+
+def _format_timestamp(value: float) -> str:
+    seconds = max(0, int(value))
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    secs = seconds % 60
+    if hours:
+        return f"{hours}:{minutes:02d}:{secs:02d}"
+    return f"{minutes}:{secs:02d}"

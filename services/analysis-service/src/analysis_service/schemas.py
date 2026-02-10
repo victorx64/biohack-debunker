@@ -6,11 +6,17 @@ from pydantic import BaseModel, Field
 
 
 class AnalysisRequest(BaseModel):
-    transcript: str = Field(..., min_length=20)
+    segments: List["TranscriptSegment"] = Field(..., min_items=1)
     claims_per_chunk: int = Field(8, ge=1, le=30)
     chunk_size_chars: int = Field(5000, ge=500, le=20000)
     research_max_results: int = Field(5, ge=1, le=20)
     research_sources: List[str] = Field(default_factory=lambda: ["tavily", "pubmed"])
+
+
+class TranscriptSegment(BaseModel):
+    start: float
+    end: float
+    text: str
 
 
 class ClaimDraft(BaseModel):

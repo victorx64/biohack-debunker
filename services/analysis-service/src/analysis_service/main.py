@@ -109,8 +109,8 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
     warnings: List[str] = []
 
     logger.info(
-        "analyze request transcript_len=%s claims_per_chunk=%s chunk_size_chars=%s research_max_results=%s sources=%s",
-        len(request.transcript),
+        "analyze request segments=%s claims_per_chunk=%s chunk_size_chars=%s research_max_results=%s sources=%s",
+        len(request.segments),
         request.claims_per_chunk,
         request.chunk_size_chars,
         request.research_max_results,
@@ -126,7 +126,7 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
     try:
         logger.info("claim extraction started")
         claims = await extract_claims(
-            request.transcript,
+            request.segments,
             request.claims_per_chunk,
             request.chunk_size_chars,
             llm,

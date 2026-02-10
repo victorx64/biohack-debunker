@@ -11,9 +11,9 @@ Return a JSON array with at most {claims_per_chunk} objects. Do not exceed this 
 Return a JSON array of objects with fields:
 - claim (string)
 - category (string)
-- timestamp (string or null)
+- timestamp (string or null, use the closest timestamp from the transcript if present, format m:ss or h:mm:ss)
 - specificity (vague | specific | quantified)
 
-Transcript:
+Transcript (some lines include timestamps like [m:ss] or [h:mm:ss]):
 {transcript}
 """

@@ -33,7 +33,7 @@ class Orchestrator:
             )
 
             analysis = await self._fetch_analysis(
-                transcription["transcript"],
+                transcription.get("segments") or [],
                 request,
             )
             claims = self._map_claims(analysis.get("claims", []))
@@ -60,10 +60,14 @@ class Orchestrator:
         response.raise_for_status()
         return response.json()
 
-    async def _fetch_analysis(self, transcript: str, request: AnalysisCreateRequest) -> dict:
+    async def _fetch_analysis(
+        self,
+        segments: List[dict],
+        request: AnalysisCreateRequest,
+    ) -> dict:
         url = f"{self._settings.analysis_service_url.rstrip('/')}/analyze"
         payload = {
-            "transcript": transcript,
+            "segments": segments,
             "claims_per_chunk": request.claims_per_chunk,
             "chunk_size_chars": request.chunk_size_chars,
             "research_max_results": request.research_max_results,
