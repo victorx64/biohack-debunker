@@ -45,13 +45,14 @@ class LLMClient:
         user_prompt: str,
         *,
         openai_reasoning: dict[str, str] | None = None,
+        trace: dict[str, Any] | None = None,
     ) -> Any:
         if not self.enabled:
             raise RuntimeError("LLM client is not configured")
         if self.provider == "openai":
-            return await self._openai_json(system_prompt, user_prompt, openai_reasoning)
+            return await self._openai_json(system_prompt, user_prompt, openai_reasoning, trace)
         if self.provider == "anthropic":
-            return await self._anthropic_json(system_prompt, user_prompt)
+            return await self._anthropic_json(system_prompt, user_prompt, trace)
         raise RuntimeError(f"Unsupported provider: {self.provider}")
 
     async def _openai_json(
@@ -59,6 +60,7 @@ class LLMClient:
         system_prompt: str,
         user_prompt: str,
         openai_reasoning: dict[str, str] | None = None,
+        trace: dict[str, Any] | None = None,
     ) -> Any:
         url = f"{self.base_url}/v1/chat/completions"
         headers = {"Authorization": f"Bearer {self.api_key}"}
@@ -97,10 +99,15 @@ class LLMClient:
                 choice = (data.get("choices") or [{}])[0] or {}
                 response_snippet = json.dumps(data, ensure_ascii=True)[:800]
                 logger.error(
-                    "openai response missing content stage=%s finish_reason=%s choice_keys=%s response=%s",
+                    "openai response missing content stage=%s provider=%s model=%s attempt=%s "
+                    "finish_reason=%s choice_keys=%s trace=%s response=%s",
                     system_prompt,
+                    self.provider,
+                    self.model,
+                    attempt + 1,
                     choice.get("finish_reason"),
                     list(choice.keys()),
+                    trace or {},
                     response_snippet,
                 )
                 if attempt < self.max_retries:
@@ -123,7 +130,12 @@ class LLMClient:
                 raise
         raise ValueError("LLM request failed after retries")
 
-    async def _anthropic_json(self, system_prompt: str, user_prompt: str) -> Any:
+    async def _anthropic_json(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        trace: dict[str, Any] | None = None,
+    ) -> Any:
         url = f"{self.base_url}/v1/messages"
         headers = {
             "x-api-key": self.api_key or "",
@@ -160,9 +172,14 @@ class LLMClient:
             if not content.strip():
                 response_snippet = json.dumps(data, ensure_ascii=True)[:800]
                 logger.error(
-                    "anthropic response missing content stage=%s stop_reason=%s response=%s",
+                    "anthropic response missing content stage=%s provider=%s model=%s attempt=%s "
+                    "stop_reason=%s trace=%s response=%s",
                     system_prompt,
+                    self.provider,
+                    self.model,
+                    attempt + 1,
                     data.get("stop_reason"),
+                    trace or {},
                     response_snippet,
                 )
                 if attempt < self.max_retries:

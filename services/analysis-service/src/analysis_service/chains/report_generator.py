@@ -16,7 +16,11 @@ async def generate_report(claims: List[ClaimResult], llm: LLMClient) -> tuple[st
         raise RuntimeError("LLM client is not configured")
     logger.info("generating report claims=%s", len(claims))
     payload = REPORT_PROMPT.format(claims=_format_claims(claims))
-    data = await llm.generate_json("Report summary", payload)
+    data = await llm.generate_json(
+        "Report summary",
+        payload,
+        trace={"claims_total": len(claims)},
+    )
     if not isinstance(data, dict):
         raise RuntimeError("LLM response missing report fields")
     summary = _normalize(data.get("summary"))

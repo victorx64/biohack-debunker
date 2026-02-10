@@ -17,13 +17,24 @@ async def analyze_claim(
     claim: str,
     sources: List[EvidenceSource],
     llm: LLMClient,
+    claim_index: int | None = None,
+    claims_total: int | None = None,
 ) -> ClaimAnalysis:
     if not llm.enabled:
         raise RuntimeError("LLM client is not configured")
     logger.info("analyzing claim claim=%s sources=%s", claim[:120], len(sources))
     evidence = _format_evidence(sources)
     prompt = CLAIM_ANALYSIS_PROMPT.format(claim=claim, evidence=evidence)
-    data = await llm.generate_json("Claim analysis", prompt)
+    data = await llm.generate_json(
+        "Claim analysis",
+        prompt,
+        trace={
+            "claim_index": claim_index,
+            "claims_total": claims_total,
+            "claim_preview": claim[:120],
+        },
+        openai_reasoning={"effort": "none"},
+    )
     return _coerce_analysis(data)
 
 

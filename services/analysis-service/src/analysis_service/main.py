@@ -159,7 +159,13 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
             )
         logger.info("analysis progress claim=%s/%s stage=verdict", index, len(claims))
         try:
-            analysis = await analyze_claim(claim.claim, sources, llm)
+            analysis = await analyze_claim(
+                claim.claim,
+                sources,
+                llm,
+                claim_index=index,
+                claims_total=len(claims),
+            )
         except Exception as exc:
             logger.exception("claim analysis failed claim=%s", claim.claim[:120])
             raise HTTPException(status_code=502, detail=str(exc)) from exc

@@ -30,6 +30,7 @@ async def extract_claims(transcript: str, claims_per_chunk: int, llm: LLMClient)
             "Claim extraction",
             payload,
             openai_reasoning={"effort": "none"},
+            trace={"chunk": index, "chunks_total": len(chunks)},
         )
         claims = _coerce_claims(data)
         added = 0
