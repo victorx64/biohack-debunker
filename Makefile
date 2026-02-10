@@ -1,4 +1,4 @@
-.PHONY: up down logs research-logs test-integration test-analysis test-research test-transcription test-gateway
+.PHONY: up down logs research-logs test-integration test-analysis test-research test-transcription test-transcription-unit test-gateway
 
 up:
 	docker compose up -d --build
@@ -20,6 +20,9 @@ test-research:
 
 test-transcription:
 	docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test-transcription
+
+test-transcription-unit:
+	docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test-transcription-unit
 
 test-gateway:
 	docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test-gateway
