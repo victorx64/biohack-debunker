@@ -45,6 +45,9 @@ class Settings:
     rate_limit_requests: int = _env_int("RATE_LIMIT_REQUESTS", 120)
     rate_limit_window: int = _env_int("RATE_LIMIT_WINDOW", 60)
 
+    transcription_read_timeout: int = _env_int("TRANSCRIPTION_READ_TIMEOUT", 120)
+    analysis_read_timeout: int = _env_int("ANALYSIS_READ_TIMEOUT", 600)
+
     enable_public_feed: bool = _env_bool("ENABLE_PUBLIC_FEED", True)
     enable_billing: bool = _env_bool("ENABLE_BILLING", False)
     free_tier_credits: int = _env_int("FREE_TIER_CREDITS", 3)

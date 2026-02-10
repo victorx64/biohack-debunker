@@ -37,7 +37,7 @@ class LLMClient:
 
     @property
     def enabled(self) -> bool:
-        return self.provider in {"openai", "anthropic"} and bool(self.model) and bool(self.api_key)
+        return self.provider == "openai" and bool(self.model) and bool(self.api_key)
 
     async def generate_json(
         self,
@@ -51,8 +51,6 @@ class LLMClient:
             raise RuntimeError("LLM client is not configured")
         if self.provider == "openai":
             return await self._openai_json(system_prompt, user_prompt, openai_reasoning, trace)
-        if self.provider == "anthropic":
-            return await self._anthropic_json(system_prompt, user_prompt, trace)
         raise RuntimeError(f"Unsupported provider: {self.provider}")
 
     async def _openai_json(
@@ -62,7 +60,7 @@ class LLMClient:
         openai_reasoning: dict[str, str] | None = None,
         trace: dict[str, Any] | None = None,
     ) -> Any:
-        url = f"{self.base_url}/v1/chat/completions"
+        url = f"{self.base_url}/chat/completions"
         headers = {"Authorization": f"Bearer {self.api_key}"}
         payload = {
             "model": self.model,
@@ -129,79 +127,6 @@ class LLMClient:
                 logger.error("openai json decode failed stage=%s content=%s", system_prompt, snippet)
                 raise
         raise ValueError("LLM request failed after retries")
-
-    async def _anthropic_json(
-        self,
-        system_prompt: str,
-        user_prompt: str,
-        trace: dict[str, Any] | None = None,
-    ) -> Any:
-        url = f"{self.base_url}/v1/messages"
-        headers = {
-            "x-api-key": self.api_key or "",
-            "anthropic-version": "2023-06-01",
-            "content-type": "application/json",
-        }
-        payload = {
-            "model": self.model,
-            "system": system_prompt,
-            "messages": [{"role": "user", "content": user_prompt}],
-            "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
-        }
-        for attempt in range(self.max_retries + 1):
-            try:
-                async with httpx.AsyncClient(timeout=self.timeout) as client:
-                    response = await client.post(url, json=payload, headers=headers)
-                    response.raise_for_status()
-                    data = response.json()
-            except httpx.HTTPStatusError as exc:
-                body = (exc.response.text or "")[:500]
-                logger.error("anthropic request failed status=%s body=%s", exc.response.status_code, body)
-                if attempt < self.max_retries and _should_retry_status(exc.response.status_code):
-                    await _sleep_backoff(self.backoff_seconds, attempt)
-                    continue
-                raise
-            except Exception:
-                logger.exception("anthropic request failed")
-                if attempt < self.max_retries:
-                    await _sleep_backoff(self.backoff_seconds, attempt)
-                    continue
-                raise
-            content = "".join(block.get("text", "") for block in data.get("content", []))
-            if not content.strip():
-                response_snippet = json.dumps(data, ensure_ascii=True)[:800]
-                logger.error(
-                    "anthropic response missing content stage=%s provider=%s model=%s attempt=%s "
-                    "stop_reason=%s trace=%s response=%s",
-                    system_prompt,
-                    self.provider,
-                    self.model,
-                    attempt + 1,
-                    data.get("stop_reason"),
-                    trace or {},
-                    response_snippet,
-                )
-                if attempt < self.max_retries:
-                    await _sleep_backoff(self.backoff_seconds, attempt)
-                    continue
-                raise ValueError("LLM returned empty content")
-            try:
-                return json.loads(_extract_json(content))
-            except JSONDecodeError:
-                recovered = _recover_json_list(content)
-                if recovered is not None:
-                    logger.warning(
-                        "anthropic json decode recovered stage=%s items=%s",
-                        system_prompt,
-                        len(recovered),
-                    )
-                    return recovered
-                snippet = (content or "")[:500]
-                logger.error("anthropic json decode failed stage=%s content=%s", system_prompt, snippet)
-                raise
-        raise ValueError("LLM request failed after retries")
-
 
 def _extract_json(text: str) -> str:
     object_start = text.find("{")

@@ -52,7 +52,11 @@ class Orchestrator:
 
     async def _fetch_transcription(self, youtube_url: str) -> dict:
         url = f"{self._settings.transcription_service_url.rstrip('/')}/transcription"
-        response = await self._client.post(url, json={"youtube_url": youtube_url})
+        response = await self._client.post(
+            url,
+            json={"youtube_url": youtube_url},
+            timeout=httpx.Timeout(30.0, read=self._settings.transcription_read_timeout),
+        )
         response.raise_for_status()
         return response.json()
 
@@ -65,7 +69,11 @@ class Orchestrator:
             "research_max_results": request.research_max_results,
             "research_sources": request.research_sources,
         }
-        response = await self._client.post(url, json=payload)
+        response = await self._client.post(
+            url,
+            json=payload,
+            timeout=httpx.Timeout(30.0, read=self._settings.analysis_read_timeout),
+        )
         response.raise_for_status()
         data = response.json()
         return data

@@ -60,15 +60,13 @@ LLM_MAX_RETRIES = _env_int("LLM_MAX_RETRIES", 2)
 LLM_RETRY_BACKOFF = _env_float("LLM_RETRY_BACKOFF", 0.5)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL") or "https://api.openai.com"
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-ANTHROPIC_BASE_URL = os.getenv("ANTHROPIC_BASE_URL") or "https://api.anthropic.com"
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL") or "https://api.openai.com/v1"
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    api_key = OPENAI_API_KEY if LLM_PROVIDER == "openai" else ANTHROPIC_API_KEY
-    base_url = OPENAI_BASE_URL if LLM_PROVIDER == "openai" else ANTHROPIC_BASE_URL
+    api_key = OPENAI_API_KEY if LLM_PROVIDER == "openai" else None
+    base_url = OPENAI_BASE_URL if LLM_PROVIDER == "openai" else None
     app.state.llm_client = LLMClient(
         provider=LLM_PROVIDER,
         model=LLM_MODEL,
