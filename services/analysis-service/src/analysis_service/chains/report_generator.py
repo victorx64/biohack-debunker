@@ -4,19 +4,22 @@ import json
 import logging
 from typing import List
 
-from ..llm_client import LLMClient
+from ..llm_client import LLMClient, LLMUsage
 from ..prompts.analysis import REPORT_PROMPT
 from ..schemas import ClaimResult
 
 logger = logging.getLogger("analysis_service.report_generator")
 
 
-async def generate_report(claims: List[ClaimResult], llm: LLMClient) -> tuple[str | None, str | None]:
+async def generate_report(
+    claims: List[ClaimResult],
+    llm: LLMClient,
+) -> tuple[str | None, str | None, LLMUsage]:
     if not llm.enabled:
         raise RuntimeError("LLM client is not configured")
     logger.info("generating report claims=%s", len(claims))
     payload = REPORT_PROMPT.format(claims=_format_claims(claims))
-    data = await llm.generate_json(
+    data, usage = await llm.generate_json_with_usage(
         "Report summary",
         payload,
         trace={"claims_total": len(claims)},
@@ -26,7 +29,7 @@ async def generate_report(claims: List[ClaimResult], llm: LLMClient) -> tuple[st
     summary = _normalize(data.get("summary"))
     overall = _normalize(data.get("overall_rating"))
     logger.info("report generated summary_len=%s overall=%s", len(summary or ""), overall or "(none)")
-    return summary, overall
+    return summary, overall, usage
 
 
 def _format_claims(claims: List[ClaimResult]) -> str:

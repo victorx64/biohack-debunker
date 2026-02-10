@@ -15,6 +15,7 @@ from .chains.claim_extractor import extract_claims
 from .chains.report_generator import generate_report
 from .llm_client import LLMClient
 from .schemas import (
+    AnalysisCosts,
     AnalysisRequest,
     AnalysisResponse,
     ClaimCosts,
@@ -205,10 +206,17 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
     )
     try:
         logger.info("report generation started")
-        summary, overall_rating = await generate_report(results, llm)
+        summary, overall_rating, report_usage = await generate_report(results, llm)
     except Exception as exc:
         logger.exception("report generation failed")
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    total_pubmed = sum(item.costs.pubmed_requests for item in results)
+    total_tavily = sum(item.costs.tavily_requests for item in results)
+    total_prompt_tokens = sum(item.costs.llm_prompt_tokens for item in results)
+    total_completion_tokens = sum(item.costs.llm_completion_tokens for item in results)
+    total_prompt_tokens += report_usage.prompt_tokens
+    total_completion_tokens += report_usage.completion_tokens
 
     took_ms = int((time.perf_counter() - start) * 1000)
     logger.info(
@@ -223,4 +231,12 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
         overall_rating=overall_rating,
         took_ms=took_ms,
         warnings=warnings,
+        costs=AnalysisCosts(
+            pubmed_requests=total_pubmed,
+            tavily_requests=total_tavily,
+            llm_prompt_tokens=total_prompt_tokens,
+            llm_completion_tokens=total_completion_tokens,
+            report_prompt_tokens=report_usage.prompt_tokens,
+            report_completion_tokens=report_usage.completion_tokens,
+        ),
     )

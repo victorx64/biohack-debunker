@@ -61,12 +61,22 @@ class ClaimCosts(BaseModel):
     llm_completion_tokens: int = 0
 
 
+class AnalysisCosts(BaseModel):
+    pubmed_requests: int = 0
+    tavily_requests: int = 0
+    llm_prompt_tokens: int = 0
+    llm_completion_tokens: int = 0
+    report_prompt_tokens: int = 0
+    report_completion_tokens: int = 0
+
+
 class AnalysisResponse(BaseModel):
     claims: List[ClaimResult]
     summary: str | None = None
     overall_rating: str | None = None
     took_ms: int
     warnings: List[str] = Field(default_factory=list)
+    costs: AnalysisCosts = Field(default_factory=lambda: AnalysisCosts())
 
 
 class HealthResponse(BaseModel):

@@ -146,15 +146,29 @@ async def update_results(
     summary: str | None,
     overall_rating: str | None,
     completed_at: datetime,
+    total_pubmed_requests: int,
+    total_tavily_requests: int,
+    total_llm_prompt_tokens: int,
+    total_llm_completion_tokens: int,
+    report_llm_prompt_tokens: int,
+    report_llm_completion_tokens: int,
 ) -> None:
     await pool.execute(
-        "UPDATE analyses SET summary=$2, overall_rating=$3, status=$4, completed_at=$5 "
-        "WHERE id=$1",
+        "UPDATE analyses SET summary=$2, overall_rating=$3, status=$4, completed_at=$5, "
+        "total_pubmed_requests=$6, total_tavily_requests=$7, total_llm_prompt_tokens=$8, "
+        "total_llm_completion_tokens=$9, report_llm_prompt_tokens=$10, "
+        "report_llm_completion_tokens=$11 WHERE id=$1",
         analysis_id,
         summary,
         overall_rating,
         "completed",
         completed_at,
+        total_pubmed_requests,
+        total_tavily_requests,
+        total_llm_prompt_tokens,
+        total_llm_completion_tokens,
+        report_llm_prompt_tokens,
+        report_llm_completion_tokens,
     )
 
 

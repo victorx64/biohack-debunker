@@ -59,6 +59,15 @@ class ClaimCosts(BaseModel):
     llm_completion_tokens: int = 0
 
 
+class AnalysisCosts(BaseModel):
+    pubmed_requests: int = 0
+    tavily_requests: int = 0
+    llm_prompt_tokens: int = 0
+    llm_completion_tokens: int = 0
+    report_prompt_tokens: int = 0
+    report_completion_tokens: int = 0
+
+
 class AnalysisDetailResponse(BaseModel):
     id: UUID
     status: str
@@ -66,6 +75,7 @@ class AnalysisDetailResponse(BaseModel):
     summary: str | None = None
     overall_rating: str | None = None
     claims: List[ClaimInfo] = Field(default_factory=list)
+    costs: AnalysisCosts = Field(default_factory=lambda: AnalysisCosts())
     created_at: datetime | None = None
     completed_at: datetime | None = None
 

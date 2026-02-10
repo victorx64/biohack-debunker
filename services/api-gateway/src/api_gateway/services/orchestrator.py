@@ -39,12 +39,19 @@ class Orchestrator:
             claims = self._map_claims(analysis.get("claims", []))
             await insert_claims_and_sources(pool, analysis_id, claims)
             completed_at = datetime.utcnow()
+            costs = analysis.get("costs") or {}
             await update_results(
                 pool,
                 analysis_id,
                 analysis.get("summary"),
                 analysis.get("overall_rating"),
                 completed_at,
+                int(costs.get("pubmed_requests") or 0),
+                int(costs.get("tavily_requests") or 0),
+                int(costs.get("llm_prompt_tokens") or 0),
+                int(costs.get("llm_completion_tokens") or 0),
+                int(costs.get("report_prompt_tokens") or 0),
+                int(costs.get("report_completion_tokens") or 0),
             )
         except Exception:
             await update_analysis_status(pool, analysis_id, "failed")
