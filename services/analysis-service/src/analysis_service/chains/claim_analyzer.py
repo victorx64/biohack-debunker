@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import List
 
 import httpx
@@ -8,6 +9,8 @@ import httpx
 from ..llm_client import LLMClient
 from ..prompts.analysis import CLAIM_ANALYSIS_PROMPT
 from ..schemas import ClaimAnalysis, EvidenceSource
+
+logger = logging.getLogger("analysis_service.claim_analyzer")
 
 
 async def analyze_claim(
@@ -17,6 +20,7 @@ async def analyze_claim(
 ) -> ClaimAnalysis:
     if not llm.enabled:
         raise RuntimeError("LLM client is not configured")
+    logger.info("analyzing claim claim=%s sources=%s", claim[:120], len(sources))
     evidence = _format_evidence(sources)
     prompt = CLAIM_ANALYSIS_PROMPT.format(claim=claim, evidence=evidence)
     data = await llm.generate_json("Claim analysis", prompt)
@@ -66,9 +70,17 @@ async def fetch_research(
     sources: List[str],
 ) -> List[EvidenceSource]:
     payload = {"query": claim, "max_results": max_results, "sources": sources}
-    response = await client.post(research_url, json=payload)
-    response.raise_for_status()
-    data = response.json()
+    try:
+        response = await client.post(research_url, json=payload)
+        response.raise_for_status()
+        data = response.json()
+    except httpx.HTTPStatusError as exc:
+        body = (exc.response.text or "")[:500]
+        logger.error("research request failed status=%s body=%s", exc.response.status_code, body)
+        raise
+    except Exception:
+        logger.exception("research request failed")
+        raise
     results = []
     for item in data.get("results", []):
         results.append(

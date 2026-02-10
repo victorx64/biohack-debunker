@@ -18,3 +18,36 @@ results in PostgreSQL and enforcing rate limits via Redis.
 ```bash
 uvicorn api_gateway.main:app --host 0.0.0.0 --port 8000
 ```
+
+## Curl examples
+
+```bash
+BASE_URL=http://localhost:8000
+```
+
+Health check:
+
+```bash
+curl -sS "$BASE_URL/health"
+```
+
+Create analysis (async):
+
+```bash
+curl -sS -X POST "$BASE_URL/api/v1/analysis" \
+	-H "Content-Type: application/json" \
+	-H "x-user-email: demo@example.com" \
+	-d '{"youtube_url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ","is_public":true}'
+```
+
+Poll analysis status (replace ANALYSIS_ID):
+
+```bash
+curl -sS "$BASE_URL/api/v1/analysis/ANALYSIS_ID"
+```
+
+Public feed (when enabled):
+
+```bash
+curl -sS "$BASE_URL/api/v1/feed?page=1&limit=20"
+```

@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
+from json import JSONDecodeError
 from typing import Any
 
 import httpx
+
+logger = logging.getLogger("analysis_service.llm")
 
 
 class LLMClient:
@@ -51,12 +55,25 @@ class LLMClient:
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.post(url, json=payload, headers=headers)
-            response.raise_for_status()
-            data = response.json()
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(url, json=payload, headers=headers)
+                response.raise_for_status()
+                data = response.json()
+        except httpx.HTTPStatusError as exc:
+            body = (exc.response.text or "")[:500]
+            logger.error("openai request failed status=%s body=%s", exc.response.status_code, body)
+            raise
+        except Exception:
+            logger.exception("openai request failed")
+            raise
         content = data["choices"][0]["message"]["content"]
-        return json.loads(_extract_json(content))
+        try:
+            return json.loads(_extract_json(content))
+        except JSONDecodeError:
+            snippet = (content or "")[:500]
+            logger.error("openai json decode failed stage=%s content=%s", system_prompt, snippet)
+            raise
 
     async def _anthropic_json(self, system_prompt: str, user_prompt: str) -> Any:
         url = f"{self.base_url}/v1/messages"
@@ -72,12 +89,25 @@ class LLMClient:
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.post(url, json=payload, headers=headers)
-            response.raise_for_status()
-            data = response.json()
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(url, json=payload, headers=headers)
+                response.raise_for_status()
+                data = response.json()
+        except httpx.HTTPStatusError as exc:
+            body = (exc.response.text or "")[:500]
+            logger.error("anthropic request failed status=%s body=%s", exc.response.status_code, body)
+            raise
+        except Exception:
+            logger.exception("anthropic request failed")
+            raise
         content = "".join(block.get("text", "") for block in data.get("content", []))
-        return json.loads(_extract_json(content))
+        try:
+            return json.loads(_extract_json(content))
+        except JSONDecodeError:
+            snippet = (content or "")[:500]
+            logger.error("anthropic json decode failed stage=%s content=%s", system_prompt, snippet)
+            raise
 
 
 def _extract_json(text: str) -> str:

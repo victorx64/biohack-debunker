@@ -1,3 +1,32 @@
 # Analysis Service
 
-Placeholder for claim extraction and analysis service.
+FastAPI service that extracts claims from transcripts, fetches supporting evidence,
+and uses an LLM to produce an analysis summary.
+
+## What it does
+
+- Extracts key claims from a transcript.
+- Queries the research service for evidence per claim.
+- Produces verdicts, confidence scores, and a report summary.
+
+## Endpoints
+
+- `GET /health` returns service status and LLM configuration.
+- `POST /analyze` analyzes a transcript and returns claim-level results.
+
+## Example curls
+
+```bash
+curl -s http://localhost:8002/health
+```
+
+```bash
+curl -s http://localhost:8002/analyze \
+	-H "Content-Type: application/json" \
+	-d '{
+		"transcript": "Creatine supplementation improves strength and power output in trained athletes when taken consistently.",
+		"max_claims": 3,
+		"research_max_results": 3,
+		"research_sources": ["tavily", "pubmed"]
+	}'
+```

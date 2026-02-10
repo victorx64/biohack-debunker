@@ -2,6 +2,8 @@ CLAIM_EXTRACTION_PROMPT = """
 You are a medical claim extraction specialist. Analyze the transcript and
 extract all health-related claims suitable for verification.
 
+Return ONLY valid JSON. Do not include markdown, code fences, or extra text.
+
 Return a JSON array of objects with fields:
 - claim (string)
 - category (string)
