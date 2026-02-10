@@ -56,6 +56,8 @@ LLM_PROVIDER = os.getenv("LLM_PROVIDER", "").strip().lower()
 LLM_MODEL = os.getenv("LLM_MODEL")
 LLM_TEMPERATURE = _env_float("LLM_TEMPERATURE", 0.2)
 LLM_MAX_TOKENS = _env_int("LLM_MAX_TOKENS", 16384)
+LLM_MAX_RETRIES = _env_int("LLM_MAX_RETRIES", 2)
+LLM_RETRY_BACKOFF = _env_float("LLM_RETRY_BACKOFF", 0.5)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL") or "https://api.openai.com"
@@ -74,6 +76,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         base_url=base_url,
         temperature=LLM_TEMPERATURE,
         max_tokens=LLM_MAX_TOKENS,
+        max_retries=LLM_MAX_RETRIES,
+        backoff_seconds=LLM_RETRY_BACKOFF,
     )
     app.state.http_client = httpx.AsyncClient(timeout=30)
     logger.info(
