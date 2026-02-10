@@ -6,7 +6,7 @@ from typing import List
 
 import httpx
 
-from ..llm_client import LLMClient
+from ..llm_client import LLMClient, LLMUsage
 from ..prompts.analysis import CLAIM_ANALYSIS_PROMPT
 from ..schemas import ClaimAnalysis, EvidenceSource
 
@@ -19,13 +19,13 @@ async def analyze_claim(
     llm: LLMClient,
     claim_index: int | None = None,
     claims_total: int | None = None,
-) -> ClaimAnalysis:
+) -> tuple[ClaimAnalysis, LLMUsage]:
     if not llm.enabled:
         raise RuntimeError("LLM client is not configured")
     logger.info("analyzing claim claim=%s sources=%s", claim[:120], len(sources))
     evidence = _format_evidence(sources)
     prompt = CLAIM_ANALYSIS_PROMPT.format(claim=claim, evidence=evidence)
-    data = await llm.generate_json(
+    data, usage = await llm.generate_json_with_usage(
         "Claim analysis",
         prompt,
         trace={
@@ -35,7 +35,7 @@ async def analyze_claim(
         },
         openai_reasoning={"effort": "none"},
     )
-    return _coerce_analysis(data)
+    return _coerce_analysis(data), usage
 
 
 def _format_evidence(sources: List[EvidenceSource]) -> str:
@@ -79,7 +79,7 @@ async def fetch_research(
     claim: str,
     max_results: int,
     sources: List[str],
-) -> List[EvidenceSource]:
+) -> tuple[List[EvidenceSource], dict[str, int]]:
     payload = {"query": claim, "max_results": max_results, "sources": sources}
     try:
         response = await client.post(research_url, json=payload)
@@ -103,4 +103,8 @@ async def fetch_research(
                 snippet=item.get("snippet"),
             )
         )
-    return results
+    usage = {
+        "tavily_requests": int(data.get("tavily_requests") or 0),
+        "pubmed_requests": int(data.get("pubmed_requests") or 0),
+    }
+    return results, usage

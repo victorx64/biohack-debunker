@@ -14,7 +14,14 @@ from .chains.claim_analyzer import analyze_claim, fetch_research
 from .chains.claim_extractor import extract_claims
 from .chains.report_generator import generate_report
 from .llm_client import LLMClient
-from .schemas import AnalysisRequest, AnalysisResponse, ClaimResult, EvidenceSource, HealthResponse
+from .schemas import (
+    AnalysisRequest,
+    AnalysisResponse,
+    ClaimCosts,
+    ClaimResult,
+    EvidenceSource,
+    HealthResponse,
+)
 
 
 def _env_float(name: str, default: float) -> float:
@@ -145,9 +152,10 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
     async def process_claim(index: int, claim) -> ClaimResult:
         logger.info("analysis progress claim=%s/%s stage=research", index, len(claims))
         sources: List[EvidenceSource] = []
+        research_usage = {"tavily_requests": 0, "pubmed_requests": 0}
         try:
             async with semaphore:
-                sources = await fetch_research(
+                sources, research_usage = await fetch_research(
                     client,
                     RESEARCH_ENDPOINT,
                     claim.claim,
@@ -163,7 +171,7 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
             )
         logger.info("analysis progress claim=%s/%s stage=verdict", index, len(claims))
         try:
-            analysis = await analyze_claim(
+            analysis, usage = await analyze_claim(
                 claim.claim,
                 sources,
                 llm,
@@ -184,6 +192,12 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
             explanation=analysis.explanation,
             nuance=analysis.nuance,
             sources=sources,
+            costs=ClaimCosts(
+                tavily_requests=research_usage.get("tavily_requests", 0),
+                pubmed_requests=research_usage.get("pubmed_requests", 0),
+                llm_prompt_tokens=usage.prompt_tokens,
+                llm_completion_tokens=usage.completion_tokens,
+            ),
         )
 
     results = await asyncio.gather(

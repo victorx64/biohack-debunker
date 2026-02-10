@@ -17,6 +17,7 @@ from ..middleware.rate_limit import rate_limit_dependency
 from ..schemas import (
     AnalysisCreateRequest,
     AnalysisCreateResponse,
+    ClaimCosts,
     AnalysisDetailResponse,
     ClaimInfo,
     SourceInfo,
@@ -119,6 +120,12 @@ async def get_analysis_status(
                     confidence=claim.get("confidence"),
                     explanation=claim.get("explanation"),
                     sources=sources_by_claim.get(claim.get("id"), []),
+                    costs=ClaimCosts(
+                        pubmed_requests=claim.get("pubmed_requests") or 0,
+                        tavily_requests=claim.get("tavily_requests") or 0,
+                        llm_prompt_tokens=claim.get("llm_prompt_tokens") or 0,
+                        llm_completion_tokens=claim.get("llm_completion_tokens") or 0,
+                    ),
                 )
             )
 

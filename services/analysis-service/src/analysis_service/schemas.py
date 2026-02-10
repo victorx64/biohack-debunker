@@ -51,6 +51,14 @@ class ClaimResult(BaseModel):
     explanation: str
     nuance: str | None = None
     sources: List[EvidenceSource] = Field(default_factory=list)
+    costs: "ClaimCosts" = Field(default_factory=lambda: ClaimCosts())
+
+
+class ClaimCosts(BaseModel):
+    pubmed_requests: int = 0
+    tavily_requests: int = 0
+    llm_prompt_tokens: int = 0
+    llm_completion_tokens: int = 0
 
 
 class AnalysisResponse(BaseModel):

@@ -26,6 +26,8 @@ class ResearchResponse(BaseModel):
     results: List[ResearchSource]
     cached: bool = False
     took_ms: int
+    tavily_requests: int = 0
+    pubmed_requests: int = 0
 
 
 class HealthResponse(BaseModel):

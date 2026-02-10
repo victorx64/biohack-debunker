@@ -49,6 +49,14 @@ class ClaimInfo(BaseModel):
     confidence: float | None = None
     explanation: str | None = None
     sources: List[SourceInfo] = Field(default_factory=list)
+    costs: "ClaimCosts" = Field(default_factory=lambda: ClaimCosts())
+
+
+class ClaimCosts(BaseModel):
+    pubmed_requests: int = 0
+    tavily_requests: int = 0
+    llm_prompt_tokens: int = 0
+    llm_completion_tokens: int = 0
 
 
 class AnalysisDetailResponse(BaseModel):

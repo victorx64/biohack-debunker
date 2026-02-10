@@ -85,6 +85,7 @@ class Orchestrator:
     def _map_claims(self, claims: List[dict]) -> List[ClaimInsert]:
         mapped: List[ClaimInsert] = []
         for claim in claims:
+            costs = claim.get("costs") or {}
             mapped.append(
                 ClaimInsert(
                     claim=str(claim.get("claim") or ""),
@@ -94,6 +95,10 @@ class Orchestrator:
                     confidence=claim.get("confidence"),
                     explanation=claim.get("explanation"),
                     sources=claim.get("sources") or [],
+                    pubmed_requests=int(costs.get("pubmed_requests") or 0),
+                    tavily_requests=int(costs.get("tavily_requests") or 0),
+                    llm_prompt_tokens=int(costs.get("llm_prompt_tokens") or 0),
+                    llm_completion_tokens=int(costs.get("llm_completion_tokens") or 0),
                 )
             )
         return mapped

@@ -17,6 +17,10 @@ class ClaimInsert:
     confidence: float | None
     explanation: str | None
     sources: list
+    pubmed_requests: int = 0
+    tavily_requests: int = 0
+    llm_prompt_tokens: int = 0
+    llm_completion_tokens: int = 0
 
 
 def _utcnow() -> datetime:
@@ -168,8 +172,9 @@ async def insert_claims_and_sources(
                 await conn.execute(
                     "INSERT INTO claims "
                     "(id, analysis_id, claim_text, timestamp_start, category, verdict, "
-                    "confidence, explanation, created_at) "
-                    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+                    "confidence, explanation, pubmed_requests, tavily_requests, "
+                    "llm_prompt_tokens, llm_completion_tokens, created_at) "
+                    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
                     claim_id,
                     analysis_id,
                     claim.claim,
@@ -178,6 +183,10 @@ async def insert_claims_and_sources(
                     claim.verdict,
                     claim.confidence,
                     claim.explanation,
+                    claim.pubmed_requests,
+                    claim.tavily_requests,
+                    claim.llm_prompt_tokens,
+                    claim.llm_completion_tokens,
                     _utcnow(),
                 )
                 claim_ids.append(claim_id)

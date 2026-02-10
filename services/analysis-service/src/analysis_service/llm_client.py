@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from json import JSONDecodeError
+from dataclasses import dataclass
 from typing import Any
 
 import httpx
@@ -50,7 +51,33 @@ class LLMClient:
         if not self.enabled:
             raise RuntimeError("LLM client is not configured")
         if self.provider == "openai":
-            return await self._openai_json(system_prompt, user_prompt, openai_reasoning, trace)
+            return await self._openai_json(
+                system_prompt,
+                user_prompt,
+                openai_reasoning,
+                trace,
+                return_usage=False,
+            )
+        raise RuntimeError(f"Unsupported provider: {self.provider}")
+
+    async def generate_json_with_usage(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        *,
+        openai_reasoning: dict[str, str] | None = None,
+        trace: dict[str, Any] | None = None,
+    ) -> tuple[Any, "LLMUsage"]:
+        if not self.enabled:
+            raise RuntimeError("LLM client is not configured")
+        if self.provider == "openai":
+            return await self._openai_json(
+                system_prompt,
+                user_prompt,
+                openai_reasoning,
+                trace,
+                return_usage=True,
+            )
         raise RuntimeError(f"Unsupported provider: {self.provider}")
 
     async def _openai_json(
@@ -59,7 +86,8 @@ class LLMClient:
         user_prompt: str,
         openai_reasoning: dict[str, str] | None = None,
         trace: dict[str, Any] | None = None,
-    ) -> Any:
+        return_usage: bool = False,
+    ) -> Any | tuple[Any, "LLMUsage"]:
         url = f"{self.base_url}/chat/completions"
         headers = {"Authorization": f"Bearer {self.api_key}"}
         payload = {
@@ -93,6 +121,7 @@ class LLMClient:
                     continue
                 raise
             content = _extract_openai_content(data)
+            usage = _extract_openai_usage(data)
             if not content.strip():
                 choice = (data.get("choices") or [{}])[0] or {}
                 response_snippet = json.dumps(data, ensure_ascii=True)[:800]
@@ -113,7 +142,10 @@ class LLMClient:
                     continue
                 raise ValueError("LLM returned empty content")
             try:
-                return json.loads(_extract_json(content))
+                parsed = json.loads(_extract_json(content))
+                if return_usage:
+                    return parsed, usage
+                return parsed
             except JSONDecodeError:
                 recovered = _recover_json_list(content)
                 if recovered is not None:
@@ -122,11 +154,19 @@ class LLMClient:
                         system_prompt,
                         len(recovered),
                     )
+                    if return_usage:
+                        return recovered, usage
                     return recovered
                 snippet = (content or "")[:500]
                 logger.error("openai json decode failed stage=%s content=%s", system_prompt, snippet)
                 raise
         raise ValueError("LLM request failed after retries")
+
+
+@dataclass(frozen=True)
+class LLMUsage:
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
 
 def _extract_json(text: str) -> str:
     object_start = text.find("{")
@@ -178,6 +218,14 @@ def _extract_openai_content(data: dict[str, Any]) -> str:
     if content is None:
         content = choice.get("text")
     return content if isinstance(content, str) else ""
+
+
+def _extract_openai_usage(data: dict[str, Any]) -> LLMUsage:
+    usage = data.get("usage") or {}
+    return LLMUsage(
+        prompt_tokens=int(usage.get("prompt_tokens") or 0),
+        completion_tokens=int(usage.get("completion_tokens") or 0),
+    )
 
 
 async def _sleep_backoff(base_seconds: float, attempt: int) -> None:

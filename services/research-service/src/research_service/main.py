@@ -64,14 +64,20 @@ async def research(request: ResearchRequest) -> ResearchResponse:
             results=cached.results,
             cached=True,
             took_ms=took_ms,
+            tavily_requests=0,
+            pubmed_requests=0,
         )
 
     results: List[ResearchSource] = []
+    tavily_requests = 0
+    pubmed_requests = 0
     try:
         if "tavily" in sources:
             results.extend(await tavily_client.search(request.query, request.max_results))
+            tavily_requests = 1
         if "pubmed" in sources:
             results.extend(await pubmed_client.search(request.query, request.max_results))
+            pubmed_requests = 1
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
@@ -84,6 +90,8 @@ async def research(request: ResearchRequest) -> ResearchResponse:
         results=results,
         cached=False,
         took_ms=took_ms,
+        tavily_requests=tavily_requests,
+        pubmed_requests=pubmed_requests,
     )
     cache.set(cache_key, response)
     return response
