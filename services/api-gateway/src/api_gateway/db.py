@@ -210,8 +210,12 @@ async def insert_claims_and_sources(
                     await conn.execute(
                         "INSERT INTO sources "
                         "(id, claim_id, title, url, source_type, publication_date, "
-                        "publication_type, relevance_score, snippet, created_at) "
-                        "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+                        "publication_type, relevance_score, snippet, cited_by_count, "
+                        "fwci, citation_normalized_percentile, primary_source_display_name, "
+                        "primary_source_is_core, counts_by_year, institution_display_names, "
+                        "created_at) "
+                        "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, "
+                        "$13, $14, $15, $16, $17)",
                         source_id,
                         claim_id,
                         source.get("title"),
@@ -221,6 +225,13 @@ async def insert_claims_and_sources(
                         source.get("publication_type"),
                         source.get("relevance_score"),
                         source.get("snippet"),
+                        source.get("cited_by_count"),
+                        source.get("fwci"),
+                        source.get("citation_normalized_percentile"),
+                        source.get("primary_source_display_name"),
+                        source.get("primary_source_is_core"),
+                        source.get("counts_by_year"),
+                        source.get("institution_display_names"),
                         _utcnow(),
                     )
     return claim_ids

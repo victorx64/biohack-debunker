@@ -26,6 +26,12 @@ class ClaimDraft(BaseModel):
     specificity: str | None = None
 
 
+class CountsByYear(BaseModel):
+    year: int
+    cited_by_count: int = 0
+    works_count: int = 0
+
+
 class EvidenceSource(BaseModel):
     title: str
     url: str
@@ -33,6 +39,13 @@ class EvidenceSource(BaseModel):
     publication_type: List[str] | None = None
     relevance_score: float = 0.0
     snippet: str | None = None
+    cited_by_count: int | None = None
+    fwci: float | None = None
+    citation_normalized_percentile: float | None = None
+    primary_source_display_name: str | None = None
+    primary_source_is_core: bool | None = None
+    counts_by_year: List[CountsByYear] | None = None
+    institution_display_names: List[str] | None = None
 
 
 class ClaimAnalysis(BaseModel):

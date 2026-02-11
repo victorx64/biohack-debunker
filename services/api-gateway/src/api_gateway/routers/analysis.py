@@ -108,6 +108,13 @@ async def get_analysis_status(
                 publication_type=source.get("publication_type"),
                 snippet=source.get("snippet"),
                 relevance_score=source.get("relevance_score"),
+                cited_by_count=source.get("cited_by_count"),
+                fwci=source.get("fwci"),
+                citation_normalized_percentile=source.get("citation_normalized_percentile"),
+                primary_source_display_name=source.get("primary_source_display_name"),
+                primary_source_is_core=source.get("primary_source_is_core"),
+                counts_by_year=source.get("counts_by_year"),
+                institution_display_names=source.get("institution_display_names"),
             )
             sources_by_claim.setdefault(source.get("claim_id"), []).append(source_info)
 
