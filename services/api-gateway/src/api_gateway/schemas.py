@@ -9,9 +9,9 @@ from pydantic import BaseModel, Field
 
 class AnalysisCreateRequest(BaseModel):
     youtube_url: str = Field(..., min_length=10)
-    claims_per_chunk: int = Field(10, ge=1, le=30)
+    claims_per_chunk: int = Field(7, ge=1, le=30)
     chunk_size_chars: int = Field(4000, ge=500, le=20000)
-    research_max_results: int = Field(5, ge=1, le=20)
+    research_max_results: int = Field(15, ge=1, le=20)
     research_sources: List[str] = Field(default_factory=lambda: ["pubmed"])
     is_public: bool = True
 

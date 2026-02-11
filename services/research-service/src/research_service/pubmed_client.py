@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import re
 import time
+import xml.etree.ElementTree as ET
 from datetime import date
 from typing import List
 
@@ -95,6 +96,7 @@ class PubMedClient:
             "id": ",".join(ids),
         }
         data = await self._get("esummary.fcgi", params)
+        abstracts = await self._efetch_abstracts(ids)
 
         results: List[ResearchSource] = []
         summary = data.get("result", {})
@@ -110,10 +112,22 @@ class PubMedClient:
                     publication_date=_parse_pubdate(item.get("pubdate")),
                     publication_type=_coerce_pubtypes(item.get("pubtype")),
                     relevance_score=1.0,
-                    snippet=item.get("elocationid"),
+                    snippet=abstracts.get(pubmed_id) or item.get("elocationid"),
                 )
             )
         return results
+
+    async def _efetch_abstracts(self, ids: List[str]) -> dict[str, str]:
+        if not ids:
+            return {}
+        params = {
+            "db": "pubmed",
+            "retmode": "xml",
+            "rettype": "abstract",
+            "id": ",".join(ids),
+        }
+        xml_text = await self._get_text("efetch.fcgi", params)
+        return _parse_abstracts_from_xml(xml_text)
 
     async def _get(self, path: str, params: dict[str, str]) -> dict:
         request_params = dict(params)
@@ -125,6 +139,17 @@ class PubMedClient:
             response = await client.get(f"{self._base_url}/{path}", params=request_params)
             response.raise_for_status()
             return response.json()
+
+    async def _get_text(self, path: str, params: dict[str, str]) -> str:
+        request_params = dict(params)
+        if self._api_key:
+            request_params["api_key"] = self._api_key
+
+        await self._rate_limiter.acquire()
+        async with httpx.AsyncClient(timeout=20) as client:
+            response = await client.get(f"{self._base_url}/{path}", params=request_params)
+            response.raise_for_status()
+            return response.text
 
 
 def _parse_pubdate(value: str | None) -> date | None:
@@ -145,3 +170,25 @@ def _coerce_pubtypes(value: object) -> List[str] | None:
         cleaned = [item.strip() for item in value if isinstance(item, str) and item.strip()]
         return cleaned or None
     return None
+
+
+def _parse_abstracts_from_xml(xml_text: str) -> dict[str, str]:
+    try:
+        root = ET.fromstring(xml_text)
+    except ET.ParseError:
+        return {}
+
+    results: dict[str, str] = {}
+    for article in root.findall(".//PubmedArticle"):
+        pmid_elem = article.find(".//PMID")
+        if pmid_elem is None or not pmid_elem.text:
+            continue
+        pmid = pmid_elem.text.strip()
+        abstract_texts = []
+        for node in article.findall(".//Abstract/AbstractText"):
+            text = "".join(node.itertext()).strip()
+            if text:
+                abstract_texts.append(text)
+        if abstract_texts:
+            results[pmid] = "\n".join(abstract_texts)
+    return results
