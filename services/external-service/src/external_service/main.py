@@ -32,6 +32,7 @@ def _pubmed_summary(ids: List[str]) -> Dict[str, Any]:
         result[pubmed_id] = {
             "title": f"Mock PubMed title {pubmed_id}",
             "pubdate": "2020",
+            "pubtype": ["Journal Article"],
             "elocationid": f"PMID:{pubmed_id}",
         }
     return result

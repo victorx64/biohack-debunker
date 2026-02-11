@@ -108,6 +108,7 @@ class PubMedClient:
                     url=f"https://pubmed.ncbi.nlm.nih.gov/{pubmed_id}/",
                     source_type="pubmed",
                     publication_date=_parse_pubdate(item.get("pubdate")),
+                    publication_type=_coerce_pubtype(item.get("pubtype")),
                     relevance_score=1.0,
                     snippet=item.get("elocationid"),
                 )
@@ -134,3 +135,13 @@ def _parse_pubdate(value: str | None) -> date | None:
         return None
     year = int(match.group(0))
     return date(year, 1, 1)
+
+
+def _coerce_pubtype(value: object) -> str | None:
+    if isinstance(value, str):
+        return value.strip() or None
+    if isinstance(value, list):
+        for item in value:
+            if isinstance(item, str) and item.strip():
+                return item.strip()
+    return None

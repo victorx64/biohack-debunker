@@ -49,6 +49,7 @@ def _format_evidence(sources: List[EvidenceSource]) -> str:
                     "title": source.title,
                     "url": source.url,
                     "source_type": source.source_type,
+                    "publication_type": source.publication_type,
                     "relevance_score": source.relevance_score,
                     "snippet": source.snippet,
                 },
@@ -99,6 +100,7 @@ async def fetch_research(
                 title=item.get("title") or "Untitled",
                 url=item.get("url") or "",
                 source_type=item.get("source_type") or "unknown",
+                publication_type=item.get("publication_type"),
                 relevance_score=float(item.get("relevance_score") or 0.0),
                 snippet=item.get("snippet"),
             )

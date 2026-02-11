@@ -36,6 +36,7 @@ class SourceInfo(BaseModel):
     url: str
     type: str
     year: int | None = None
+    publication_type: str | None = None
     snippet: str | None = None
     relevance_score: float | None = None
 

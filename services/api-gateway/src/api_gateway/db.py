@@ -210,14 +210,15 @@ async def insert_claims_and_sources(
                     await conn.execute(
                         "INSERT INTO sources "
                         "(id, claim_id, title, url, source_type, publication_date, "
-                        "relevance_score, snippet, created_at) "
-                        "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+                        "publication_type, relevance_score, snippet, created_at) "
+                        "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
                         source_id,
                         claim_id,
                         source.get("title"),
                         source.get("url"),
                         source.get("source_type"),
                         source.get("publication_date"),
+                        source.get("publication_type"),
                         source.get("relevance_score"),
                         source.get("snippet"),
                         _utcnow(),

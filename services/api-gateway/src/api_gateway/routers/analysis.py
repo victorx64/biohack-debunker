@@ -105,6 +105,7 @@ async def get_analysis_status(
                 year=source.get("publication_date").year
                 if source.get("publication_date")
                 else None,
+                publication_type=source.get("publication_type"),
                 snippet=source.get("snippet"),
                 relevance_score=source.get("relevance_score"),
             )
