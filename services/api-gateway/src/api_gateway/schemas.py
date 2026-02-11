@@ -69,6 +69,7 @@ class ClaimInfo(BaseModel):
 class ClaimCosts(BaseModel):
     pubmed_requests: int = 0
     tavily_requests: int = 0
+    openalex_requests: int = 0
     llm_prompt_tokens: int = 0
     llm_completion_tokens: int = 0
 
@@ -76,6 +77,7 @@ class ClaimCosts(BaseModel):
 class AnalysisCosts(BaseModel):
     pubmed_requests: int = 0
     tavily_requests: int = 0
+    openalex_requests: int = 0
     llm_prompt_tokens: int = 0
     llm_completion_tokens: int = 0
     report_prompt_tokens: int = 0

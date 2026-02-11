@@ -132,6 +132,7 @@ async def get_analysis_status(
                     costs=ClaimCosts(
                         pubmed_requests=claim.get("pubmed_requests") or 0,
                         tavily_requests=claim.get("tavily_requests") or 0,
+                        openalex_requests=claim.get("openalex_requests") or 0,
                         llm_prompt_tokens=claim.get("llm_prompt_tokens") or 0,
                         llm_completion_tokens=claim.get("llm_completion_tokens") or 0,
                     ),
@@ -148,6 +149,7 @@ async def get_analysis_status(
         costs=AnalysisCosts(
             pubmed_requests=row.get("total_pubmed_requests") or 0,
             tavily_requests=row.get("total_tavily_requests") or 0,
+            openalex_requests=row.get("total_openalex_requests") or 0,
             llm_prompt_tokens=row.get("total_llm_prompt_tokens") or 0,
             llm_completion_tokens=row.get("total_llm_completion_tokens") or 0,
             report_prompt_tokens=row.get("report_llm_prompt_tokens") or 0,

@@ -48,6 +48,7 @@ class Orchestrator:
                 completed_at,
                 int(costs.get("pubmed_requests") or 0),
                 int(costs.get("tavily_requests") or 0),
+                int(costs.get("openalex_requests") or 0),
                 int(costs.get("llm_prompt_tokens") or 0),
                 int(costs.get("llm_completion_tokens") or 0),
                 int(costs.get("report_prompt_tokens") or 0),
@@ -104,6 +105,7 @@ class Orchestrator:
                     sources=claim.get("sources") or [],
                     pubmed_requests=int(costs.get("pubmed_requests") or 0),
                     tavily_requests=int(costs.get("tavily_requests") or 0),
+                    openalex_requests=int(costs.get("openalex_requests") or 0),
                     llm_prompt_tokens=int(costs.get("llm_prompt_tokens") or 0),
                     llm_completion_tokens=int(costs.get("llm_completion_tokens") or 0),
                 )

@@ -153,7 +153,7 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
     async def process_claim(index: int, claim) -> ClaimResult:
         logger.info("analysis progress claim=%s/%s stage=research", index, len(claims))
         sources: List[EvidenceSource] = []
-        research_usage = {"tavily_requests": 0, "pubmed_requests": 0}
+        research_usage = {"tavily_requests": 0, "pubmed_requests": 0, "openalex_requests": 0}
         try:
             async with semaphore:
                 sources, research_usage = await fetch_research(
@@ -196,6 +196,7 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
             costs=ClaimCosts(
                 tavily_requests=research_usage.get("tavily_requests", 0),
                 pubmed_requests=research_usage.get("pubmed_requests", 0),
+                openalex_requests=research_usage.get("openalex_requests", 0),
                 llm_prompt_tokens=usage.prompt_tokens,
                 llm_completion_tokens=usage.completion_tokens,
             ),
@@ -213,6 +214,7 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
 
     total_pubmed = sum(item.costs.pubmed_requests for item in results)
     total_tavily = sum(item.costs.tavily_requests for item in results)
+    total_openalex = sum(item.costs.openalex_requests for item in results)
     total_prompt_tokens = sum(item.costs.llm_prompt_tokens for item in results)
     total_completion_tokens = sum(item.costs.llm_completion_tokens for item in results)
     total_prompt_tokens += report_usage.prompt_tokens
@@ -234,6 +236,7 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
         costs=AnalysisCosts(
             pubmed_requests=total_pubmed,
             tavily_requests=total_tavily,
+            openalex_requests=total_openalex,
             llm_prompt_tokens=total_prompt_tokens,
             llm_completion_tokens=total_completion_tokens,
             report_prompt_tokens=report_usage.prompt_tokens,

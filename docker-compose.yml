@@ -69,6 +69,8 @@ services:
       TAVILY_BASE_URL: ${TAVILY_BASE_URL:-https://api.tavily.com}
       PUBMED_BASE_URL: ${PUBMED_BASE_URL:-https://eutils.ncbi.nlm.nih.gov/entrez/eutils}
       PUBMED_API_KEY: ${PUBMED_API_KEY:-}
+      OPENALEX_BASE_URL: ${OPENALEX_BASE_URL:-https://api.openalex.org}
+      OPENALEX_API_KEY: ${OPENALEX_API_KEY:-}
       QDRANT_HOST: ${QDRANT_HOST:-qdrant}
       QDRANT_PORT: ${QDRANT_PORT:-6333}
       RESEARCH_SERVICE_PORT: ${RESEARCH_SERVICE_PORT:-8003}

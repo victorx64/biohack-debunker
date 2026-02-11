@@ -115,5 +115,6 @@ async def fetch_research(
     usage = {
         "tavily_requests": int(data.get("tavily_requests") or 0),
         "pubmed_requests": int(data.get("pubmed_requests") or 0),
+        "openalex_requests": int(data.get("openalex_requests") or 0),
     }
     return results, usage
