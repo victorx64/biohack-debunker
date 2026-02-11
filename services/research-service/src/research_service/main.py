@@ -7,6 +7,7 @@ from typing import List
 from fastapi import FastAPI, HTTPException
 import redis.asyncio as redis
 
+from .openalex_client import OpenAlexClient
 from .pubmed_client import PubMedClient
 from .schemas import HealthResponse, ResearchRequest, ResearchResponse, ResearchSource
 from .tavily_client import TavilyClient
@@ -20,6 +21,8 @@ TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 TAVILY_BASE_URL = os.getenv("TAVILY_BASE_URL", "https://api.tavily.com")
 PUBMED_BASE_URL = os.getenv("PUBMED_BASE_URL", "https://eutils.ncbi.nlm.nih.gov/entrez/eutils")
 PUBMED_API_KEY = os.getenv("PUBMED_API_KEY")
+OPENALEX_BASE_URL = os.getenv("OPENALEX_BASE_URL", "https://api.openalex.org")
+OPENALEX_API_KEY = os.getenv("OPENALEX_API_KEY")
 REDIS_URL = os.getenv("REDIS_URL")
 
 if not REDIS_URL:
@@ -33,6 +36,7 @@ pubmed_client = PubMedClient(
     api_key=PUBMED_API_KEY,
     redis_client=redis_client,
 )
+openalex_client = OpenAlexClient(api_key=OPENALEX_API_KEY, base_url=OPENALEX_BASE_URL)
 
 
 @app.on_event("shutdown")
@@ -66,11 +70,13 @@ async def research(request: ResearchRequest) -> ResearchResponse:
             took_ms=took_ms,
             tavily_requests=cached.tavily_requests,
             pubmed_requests=cached.pubmed_requests,
+            openalex_requests=cached.openalex_requests,
         )
 
     results: List[ResearchSource] = []
     tavily_requests = 0
     pubmed_requests = 0
+    openalex_requests = 0
     try:
         if "tavily" in sources:
             results.extend(await tavily_client.search(request.query, request.max_results))
@@ -78,6 +84,9 @@ async def research(request: ResearchRequest) -> ResearchResponse:
         if "pubmed" in sources:
             results.extend(await pubmed_client.search(request.query, request.max_results))
             pubmed_requests = 1
+        if "openalex" in sources:
+            results.extend(await openalex_client.search(request.query, request.max_results))
+            openalex_requests = 1
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
@@ -92,6 +101,7 @@ async def research(request: ResearchRequest) -> ResearchResponse:
         took_ms=took_ms,
         tavily_requests=tavily_requests,
         pubmed_requests=pubmed_requests,
+        openalex_requests=openalex_requests,
     )
     cache.set(cache_key, response)
     return response

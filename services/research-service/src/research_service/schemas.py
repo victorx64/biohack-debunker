@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 class ResearchRequest(BaseModel):
     query: str = Field(..., min_length=3)
     max_results: int = Field(5, ge=1, le=20)
-    sources: List[str] = Field(default_factory=lambda: ["tavily", "pubmed"])
+    sources: List[str] = Field(default_factory=lambda: ["tavily", "pubmed", "openalex"])
 
 
 class ResearchSource(BaseModel):
@@ -29,6 +29,7 @@ class ResearchResponse(BaseModel):
     took_ms: int
     tavily_requests: int = 0
     pubmed_requests: int = 0
+    openalex_requests: int = 0
 
 
 class HealthResponse(BaseModel):
