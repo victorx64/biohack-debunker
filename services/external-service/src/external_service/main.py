@@ -1,11 +1,23 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any, Dict, List
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Query, Request
 
 app = FastAPI(title="External Service", version="0.1.0")
+
+_OPENALEX_RESPONSE_PATH = Path(__file__).with_name("open-alex-search.json")
+
+
+def _load_openalex_response() -> Dict[str, Any]:
+    if not _OPENALEX_RESPONSE_PATH.exists():
+        return {"meta": {"count": 0, "page": 1, "per_page": 0, "db_response_time_ms": 0}, "results": []}
+    return json.loads(_OPENALEX_RESPONSE_PATH.read_text(encoding="utf-8"))
+
+
+_OPENALEX_RESPONSE = _load_openalex_response()
 
 
 def _tavily_results(query: str, max_results: int) -> List[Dict[str, Any]]:
@@ -74,6 +86,25 @@ async def tavily_search(payload: Dict[str, Any]) -> Dict[str, Any]:
     query = str(payload.get("query") or "")
     max_results = int(payload.get("max_results") or 3)
     return {"results": _tavily_results(query, max_results)}
+
+
+@app.get("/works")
+async def openalex_search(
+    search: str | None = None,
+    per_page: int = Query(25, alias="per-page"),
+    page: int = 1,
+) -> Dict[str, Any]:
+    _ = search
+    per_page = max(per_page, 1)
+    page = max(page, 1)
+
+    meta = dict(_OPENALEX_RESPONSE.get("meta") or {})
+    results = list(_OPENALEX_RESPONSE.get("results") or [])
+    start = (page - 1) * per_page
+    end = start + per_page
+    meta["page"] = page
+    meta["per_page"] = per_page
+    return {"meta": meta, "results": results[start:end]}
 
 
 @app.get("/pubmed/esearch.fcgi")
