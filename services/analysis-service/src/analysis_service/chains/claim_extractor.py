@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import List
 
@@ -29,18 +30,29 @@ async def extract_claims(
     chunks = _chunk_segments(segments, chunk_size_chars)
     collected: List[ClaimDraft] = []
     seen: set[str] = set()
-    for index, chunk in enumerate(chunks, start=1):
-        payload = CLAIM_EXTRACTION_PROMPT.format(
-            transcript=chunk,
-            claims_per_chunk=claims_per_chunk,
-        )
-        data = await llm.generate_json(
-            "Claim extraction",
-            payload,
-            openai_reasoning={"effort": "none"},
-            trace={"chunk": index, "chunks_total": len(chunks)},
-        )
-        claims = _coerce_claims(data)
+    semaphore = asyncio.Semaphore(10)
+
+    async def _extract_chunk(index: int, chunk: str) -> List[ClaimDraft]:
+        async with semaphore:
+            payload = CLAIM_EXTRACTION_PROMPT.format(
+                transcript=chunk,
+                claims_per_chunk=claims_per_chunk,
+            )
+            data = await llm.generate_json(
+                "Claim extraction",
+                payload,
+                openai_reasoning={"effort": "none"},
+                trace={"chunk": index, "chunks_total": len(chunks)},
+            )
+            return _coerce_claims(data)
+
+    tasks = [
+        _extract_chunk(index, chunk)
+        for index, chunk in enumerate(chunks, start=1)
+    ]
+    results = await asyncio.gather(*tasks)
+
+    for index, claims in enumerate(results, start=1):
         added = 0
         for claim in claims:
             key = claim.claim.casefold()
