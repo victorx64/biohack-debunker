@@ -102,7 +102,7 @@ class Orchestrator:
                     verdict=claim.get("verdict"),
                     confidence=claim.get("confidence"),
                     explanation=claim.get("explanation"),
-                    keywords=claim.get("keywords"),
+                    search_query=claim.get("search_query"),
                     sources=claim.get("sources") or [],
                     pubmed_requests=int(costs.get("pubmed_requests") or 0),
                     tavily_requests=int(costs.get("tavily_requests") or 0),

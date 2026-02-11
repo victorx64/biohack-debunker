@@ -78,13 +78,13 @@ async def fetch_research(
     client: httpx.AsyncClient,
     research_url: str,
     claim: str,
-    keywords: List[str] | None,
+    search_query: str | None,
     max_results: int,
     sources: List[str],
 ) -> tuple[List[EvidenceSource], dict[str, int]]:
+    query = search_query or claim
     payload = {
-        "query": claim,
-        "keywords": keywords,
+        "query": query,
         "max_results": max_results,
         "sources": sources,
     }

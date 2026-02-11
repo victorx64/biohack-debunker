@@ -59,7 +59,7 @@ class ClaimInfo(BaseModel):
     text: str
     timestamp: str | None = None
     category: str | None = None
-    keywords: List[str] | None = None
+    search_query: str | None = None
     verdict: str | None = None
     confidence: float | None = None
     explanation: str | None = None

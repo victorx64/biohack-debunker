@@ -24,7 +24,7 @@ class ClaimDraft(BaseModel):
     category: str | None = None
     timestamp: str | None = None
     specificity: str | None = None
-    keywords: List[str] | None = None
+    search_query: str | None = None
 
 
 class CountsByYear(BaseModel):
@@ -61,7 +61,7 @@ class ClaimResult(BaseModel):
     category: str | None = None
     timestamp: str | None = None
     specificity: str | None = None
-    keywords: List[str] | None = None
+    search_query: str | None = None
     verdict: str
     confidence: float
     explanation: str

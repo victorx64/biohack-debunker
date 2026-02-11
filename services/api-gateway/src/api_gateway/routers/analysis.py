@@ -140,7 +140,7 @@ async def get_analysis_status(
                     text=claim.get("claim_text"),
                     timestamp=format_timestamp(claim.get("timestamp_start")),
                     category=claim.get("category"),
-                    keywords=claim.get("keywords"),
+                    search_query=claim.get("search_query"),
                     verdict=claim.get("verdict"),
                     confidence=claim.get("confidence"),
                     explanation=claim.get("explanation"),

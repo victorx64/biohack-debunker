@@ -11,7 +11,7 @@ Return a JSON array of objects with fields:
 - category (string)
 - timestamp (string or null, use the closest timestamp from the transcript if present, format m:ss or h:mm:ss)
 - specificity (vague | specific | quantified)
-- keywords (array of 3-8 short search keywords or phrases, in English)
+- search_query (string, a PubMed search query using [tiab]; boolean operators are allowed)
 
 Transcript (some lines include timestamps like [m:ss] or [h:mm:ss]):
 {transcript}

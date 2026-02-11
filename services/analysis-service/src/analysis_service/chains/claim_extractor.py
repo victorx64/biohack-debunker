@@ -76,7 +76,7 @@ def _coerce_claims(data: object) -> List[ClaimDraft]:
                 category=_normalize(item.get("category")),
                 timestamp=_normalize(item.get("timestamp")),
                 specificity=_normalize(item.get("specificity")),
-                keywords=_normalize_keywords(item.get("keywords")),
+                search_query=_normalize(item.get("search_query")),
             )
         )
     return claims
@@ -87,27 +87,6 @@ def _normalize(value: object) -> str | None:
         return None
     text = str(value).strip()
     return text or None
-
-
-def _normalize_keywords(value: object) -> List[str] | None:
-    if not isinstance(value, list):
-        return None
-    results: List[str] = []
-    seen: set[str] = set()
-    for item in value:
-        if not isinstance(item, str):
-            continue
-        text = item.strip()
-        if not text:
-            continue
-        key = text.casefold()
-        if key in seen:
-            continue
-        seen.add(key)
-        results.append(text)
-        if len(results) >= 8:
-            break
-    return results or None
 
 
 def _chunk_segments(segments: List[TranscriptSegment], limit: int = 5000) -> List[str]:
