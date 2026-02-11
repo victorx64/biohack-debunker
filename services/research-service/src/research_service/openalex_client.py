@@ -1,17 +1,74 @@
 from __future__ import annotations
 
+import asyncio
+import time
 from datetime import date
 from typing import Any, List
 
 import httpx
+import redis.asyncio as redis
 
 from .schemas import CountsByYear, ResearchSource
 
 
+class _RateLimiter:
+    def __init__(self, max_rps: int) -> None:
+        self._min_interval = 1.0 / max_rps
+        self._lock = asyncio.Lock()
+        self._next_time = 0.0
+
+    async def acquire(self) -> None:
+        async with self._lock:
+            now = time.monotonic()
+            if now < self._next_time:
+                await asyncio.sleep(self._next_time - now)
+                now = time.monotonic()
+            self._next_time = max(now, self._next_time) + self._min_interval
+
+
+class _RedisRateLimiter:
+    _INCR_EXPIRE_SCRIPT = """
+    local current = redis.call('INCR', KEYS[1])
+    if current == 1 then
+      redis.call('EXPIRE', KEYS[1], ARGV[1])
+    end
+    return current
+    """
+
+    def __init__(self, client: redis.Redis, max_rps: int, key_prefix: str = "openalex:rps") -> None:
+        self._client = client
+        self._max_rps = max_rps
+        self._key_prefix = key_prefix
+        self._ttl_seconds = 2
+
+    async def acquire(self) -> None:
+        while True:
+            now = time.time()
+            window = int(now)
+            key = f"{self._key_prefix}:{window}"
+            current = await self._client.eval(self._INCR_EXPIRE_SCRIPT, 1, key, self._ttl_seconds)
+            if int(current) <= self._max_rps:
+                return
+            sleep_for = (window + 1) - now
+            if sleep_for < 0.01:
+                sleep_for = 0.01
+            await asyncio.sleep(sleep_for)
+
+
 class OpenAlexClient:
-    def __init__(self, api_key: str | None, base_url: str = "https://api.openalex.org") -> None:
+    def __init__(
+        self,
+        api_key: str | None,
+        base_url: str = "https://api.openalex.org",
+        max_rps: int = 100,
+        redis_client: redis.Redis | None = None,
+    ) -> None:
         self._api_key = api_key
         self._base_url = base_url.rstrip("/")
+        if redis_client is None:
+            self._rate_limiter = _RateLimiter(max_rps)
+        else:
+            self._rate_limiter = _RedisRateLimiter(redis_client, max_rps)
 
     async def search(self, query: str, max_results: int) -> List[ResearchSource]:
         if not self._api_key:
@@ -25,6 +82,7 @@ class OpenAlexClient:
             "api_key": self._api_key,
         }
 
+        await self._rate_limiter.acquire()
         async with httpx.AsyncClient(timeout=30) as client:
             response = await client.get(f"{self._base_url}/works", params=params)
             response.raise_for_status()
@@ -102,70 +160,70 @@ def _coerce_type(value: object) -> List[str] | None:
 def _parse_date(value: object) -> date | None:
     if not isinstance(value, str):
         return None
-
-
-    def _extract_primary_source(item: dict[str, Any]) -> tuple[str | None, bool | None]:
-        primary_location = item.get("primary_location")
-        if not isinstance(primary_location, dict):
-            return None, None
-
-        source = primary_location.get("source")
-        if not isinstance(source, dict):
-            return None, None
-
-        display_name = _coerce_str(source.get("display_name"))
-        is_core = source.get("is_core")
-        if not isinstance(is_core, bool):
-            is_core = None
-        return display_name, is_core
-
-
-    def _extract_counts_by_year(value: object) -> List[CountsByYear] | None:
-        if not isinstance(value, list):
-            return None
-        results: List[CountsByYear] = []
-        for item in value:
-            if not isinstance(item, dict):
-                continue
-            year = item.get("year")
-            if not isinstance(year, int):
-                continue
-            results.append(
-                CountsByYear(
-                    year=year,
-                    cited_by_count=_coerce_int(item.get("cited_by_count")) or 0,
-                    works_count=_coerce_int(item.get("works_count")) or 0,
-                )
-            )
-        return results or None
-
-
-    def _extract_institution_display_names(item: dict[str, Any]) -> List[str] | None:
-        authorships = item.get("authorships")
-        if not isinstance(authorships, list):
-            return None
-
-        names: set[str] = set()
-        for authorship in authorships:
-            if not isinstance(authorship, dict):
-                continue
-            institutions = authorship.get("institutions")
-            if not isinstance(institutions, list):
-                continue
-            for institution in institutions:
-                if not isinstance(institution, dict):
-                    continue
-                display_name = _coerce_str(institution.get("display_name"))
-                if display_name:
-                    names.add(display_name)
-
-        if not names:
-            return None
-        return sorted(names)
     try:
         return date.fromisoformat(value)
     except ValueError:
         return None
+
+
+def _extract_primary_source(item: dict[str, Any]) -> tuple[str | None, bool | None]:
+    primary_location = item.get("primary_location")
+    if not isinstance(primary_location, dict):
+        return None, None
+
+    source = primary_location.get("source")
+    if not isinstance(source, dict):
+        return None, None
+
+    display_name = _coerce_str(source.get("display_name"))
+    is_core = source.get("is_core")
+    if not isinstance(is_core, bool):
+        is_core = None
+    return display_name, is_core
+
+
+def _extract_counts_by_year(value: object) -> List[CountsByYear] | None:
+    if not isinstance(value, list):
+        return None
+    results: List[CountsByYear] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        year = item.get("year")
+        if not isinstance(year, int):
+            continue
+        results.append(
+            CountsByYear(
+                year=year,
+                cited_by_count=_coerce_int(item.get("cited_by_count")) or 0,
+                works_count=_coerce_int(item.get("works_count")) or 0,
+            )
+        )
+    return results or None
+
+
+def _extract_institution_display_names(item: dict[str, Any]) -> List[str] | None:
+    authorships = item.get("authorships")
+    if not isinstance(authorships, list):
+        return None
+
+    names: set[str] = set()
+    for authorship in authorships:
+        if not isinstance(authorship, dict):
+            continue
+        institutions = authorship.get("institutions")
+        if not isinstance(institutions, list):
+            continue
+        for institution in institutions:
+            if not isinstance(institution, dict):
+                continue
+            display_name = _coerce_str(institution.get("display_name"))
+            if display_name:
+                names.add(display_name)
+
+    if not names:
+        return None
+    return sorted(names)
 
 
 def _extract_url(item: dict[str, Any]) -> str:

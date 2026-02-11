@@ -37,7 +37,7 @@ Create analysis (async):
 curl -sS -X POST "$BASE_URL/api/v1/analysis" \
 	-H "Content-Type: application/json" \
 	-H "x-user-email: demo@example.com" \
-	-d '{"youtube_url":"https://www.youtube.com/watch?v=ITyg5EdfX3o","is_public":true,"research_sources":["pubmed"]}'
+	-d '{"youtube_url":"https://www.youtube.com/watch?v=ITyg5EdfX3o","is_public":true,"research_sources":["openalex"]}'
 ```
 
 Poll analysis status (replace ANALYSIS_ID):
