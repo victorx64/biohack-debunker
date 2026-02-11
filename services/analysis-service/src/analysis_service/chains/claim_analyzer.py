@@ -48,9 +48,9 @@ def _format_evidence(sources: List[EvidenceSource]) -> str:
                 {
                     "title": source.title,
                     "url": source.url,
-                    "source_type": source.source_type,
+                    # "source_type": source.source_type,
                     "publication_type": source.publication_type,
-                    "relevance_score": source.relevance_score,
+                    # "relevance_score": source.relevance_score,
                     "snippet": source.snippet,
                 },
                 ensure_ascii=True,

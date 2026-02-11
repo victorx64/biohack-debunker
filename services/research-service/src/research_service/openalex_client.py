@@ -78,7 +78,7 @@ class OpenAlexClient:
             "search": query,
             "per-page": str(max_results),
             "select": "id,title,publication_date,type,primary_location,ids,cited_by_count,fwci,"
-            "citation_normalized_percentile,counts_by_year,authorships",
+            "citation_normalized_percentile,counts_by_year,authorships,abstract_inverted_index",
             "api_key": self._api_key,
         }
 
@@ -99,7 +99,7 @@ class OpenAlexClient:
                     publication_date=_parse_date(item.get("publication_date")),
                     publication_type=_coerce_type(item.get("type")),
                     relevance_score=_coerce_float(item.get("relevance_score")),
-                    snippet=None,
+                    snippet=_reconstruct_abstract(item.get("abstract_inverted_index")),
                     cited_by_count=_coerce_int(item.get("cited_by_count")),
                     fwci=_coerce_optional_float(item.get("fwci")),
                     citation_normalized_percentile=_coerce_percentile(
@@ -224,6 +224,27 @@ def _extract_institution_display_names(item: dict[str, Any]) -> List[str] | None
     if not names:
         return None
     return sorted(names)
+
+
+def _reconstruct_abstract(inverted_index: object) -> str | None:
+    if not isinstance(inverted_index, dict) or not inverted_index:
+        return None
+
+    word_map: dict[int, str] = {}
+    for word, positions in inverted_index.items():
+        if not isinstance(word, str) or not isinstance(positions, list):
+            continue
+        for position in positions:
+            if isinstance(position, int):
+                word_map[position] = word
+
+    if not word_map:
+        return None
+
+    sorted_positions = sorted(word_map.keys())
+    abstract_words = [word_map[pos] for pos in sorted_positions]
+    abstract = " ".join(abstract_words).strip()
+    return abstract or None
 
 
 def _extract_url(item: dict[str, Any]) -> str:
