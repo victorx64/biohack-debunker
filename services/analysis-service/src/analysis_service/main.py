@@ -160,6 +160,7 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
                     client,
                     RESEARCH_ENDPOINT,
                     claim.claim,
+                    claim.keywords,
                     request.research_max_results,
                     request.research_sources,
                 )
@@ -188,6 +189,7 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
             category=claim.category,
             timestamp=claim.timestamp,
             specificity=claim.specificity,
+            keywords=claim.keywords,
             verdict=analysis.verdict,
             confidence=analysis.confidence,
             explanation=analysis.explanation,

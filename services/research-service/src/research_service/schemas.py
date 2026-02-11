@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 class ResearchRequest(BaseModel):
     query: str = Field(..., min_length=3)
+    keywords: List[str] | None = None
     max_results: int = Field(5, ge=1, le=20)
     sources: List[str] = Field(default_factory=lambda: ["tavily", "pubmed", "openalex"])
 

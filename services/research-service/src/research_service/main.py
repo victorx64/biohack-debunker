@@ -39,6 +39,25 @@ pubmed_client = PubMedClient(
 openalex_client = OpenAlexClient(api_key=OPENALEX_API_KEY, base_url=OPENALEX_BASE_URL)
 
 
+def _normalize_keywords(value: List[str] | None) -> List[str]:
+    if not value:
+        return []
+    cleaned: List[str] = []
+    seen: set[str] = set()
+    for item in value:
+        if not isinstance(item, str):
+            continue
+        text = item.strip()
+        if not text:
+            continue
+        key = text.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        cleaned.append(text)
+    return cleaned
+
+
 @app.on_event("shutdown")
 async def shutdown() -> None:
     if redis_client is not None:
@@ -58,7 +77,9 @@ async def health() -> HealthResponse:
 async def research(request: ResearchRequest) -> ResearchResponse:
     start = time.perf_counter()
     sources = [source.strip().lower() for source in request.sources]
-    cache_key = f"{request.query}::{','.join(sorted(sources))}::{request.max_results}"
+    keywords = _normalize_keywords(request.keywords)
+    keyword_key = ",".join(keywords) if keywords else ""
+    cache_key = f"{request.query}::{keyword_key}::{','.join(sorted(sources))}::{request.max_results}"
 
     cached = cache.get(cache_key)
     if cached:
@@ -79,13 +100,16 @@ async def research(request: ResearchRequest) -> ResearchResponse:
     openalex_requests = 0
     try:
         if "tavily" in sources:
-            results.extend(await tavily_client.search(request.query, request.max_results))
+            tavily_query = " ".join(keywords) if keywords else request.query
+            results.extend(await tavily_client.search(tavily_query, request.max_results))
             tavily_requests = 1
         if "pubmed" in sources:
-            results.extend(await pubmed_client.search(request.query, request.max_results))
+            pubmed_query = " ".join(keywords) if keywords else request.query
+            results.extend(await pubmed_client.search(pubmed_query, request.max_results))
             pubmed_requests = 1
         if "openalex" in sources:
-            results.extend(await openalex_client.search(request.query, request.max_results))
+            openalex_query = " ".join(keywords) if keywords else request.query
+            results.extend(await openalex_client.search(openalex_query, request.max_results))
             openalex_requests = 1
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc

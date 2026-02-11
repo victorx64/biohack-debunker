@@ -16,6 +16,7 @@ class ClaimInsert:
     verdict: str | None
     confidence: float | None
     explanation: str | None
+    keywords: list[str] | None
     sources: list
     pubmed_requests: int = 0
     tavily_requests: int = 0
@@ -189,10 +190,10 @@ async def insert_claims_and_sources(
                 await conn.execute(
                     "INSERT INTO claims "
                     "(id, analysis_id, claim_text, timestamp_start, category, verdict, "
-                    "confidence, explanation, pubmed_requests, tavily_requests, "
+                    "confidence, explanation, keywords, pubmed_requests, tavily_requests, "
                     "openalex_requests, llm_prompt_tokens, llm_completion_tokens, "
                     "created_at) "
-                    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)",
+                    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)",
                     claim_id,
                     analysis_id,
                     claim.claim,
@@ -201,6 +202,7 @@ async def insert_claims_and_sources(
                     claim.verdict,
                     claim.confidence,
                     claim.explanation,
+                    claim.keywords,
                     claim.pubmed_requests,
                     claim.tavily_requests,
                     claim.openalex_requests,
