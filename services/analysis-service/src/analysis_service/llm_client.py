@@ -23,6 +23,7 @@ class LLMClient:
         temperature: float,
         max_tokens: int,
         timeout: float = 30.0,
+        read_timeout: float | None = None,
         max_retries: int = 2,
         backoff_seconds: float = 0.5,
     ) -> None:
@@ -33,6 +34,7 @@ class LLMClient:
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.timeout = timeout
+        self.read_timeout = read_timeout or timeout
         self.max_retries = max_retries
         self.backoff_seconds = backoff_seconds
 
@@ -103,7 +105,8 @@ class LLMClient:
             payload["reasoning"] = openai_reasoning
         for attempt in range(self.max_retries + 1):
             try:
-                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                timeout = httpx.Timeout(self.timeout, read=self.read_timeout)
+                async with httpx.AsyncClient(timeout=timeout) as client:
                     response = await client.post(url, json=payload, headers=headers)
                     response.raise_for_status()
                     data = response.json()
@@ -111,6 +114,17 @@ class LLMClient:
                 body = (exc.response.text or "")[:500]
                 logger.error("openai request failed status=%s body=%s", exc.response.status_code, body)
                 if attempt < self.max_retries and _should_retry_status(exc.response.status_code):
+                    await _sleep_backoff(self.backoff_seconds, attempt)
+                    continue
+                raise
+            except httpx.ReadTimeout:
+                logger.warning(
+                    "openai request timed out stage=%s attempt=%s/%s",
+                    system_prompt,
+                    attempt + 1,
+                    self.max_retries + 1,
+                )
+                if attempt < self.max_retries:
                     await _sleep_backoff(self.backoff_seconds, attempt)
                     continue
                 raise

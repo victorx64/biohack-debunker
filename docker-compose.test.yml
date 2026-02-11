@@ -5,6 +5,8 @@ services:
     environment:
       LLM_PROVIDER: openai
       LLM_MODEL: mock-model
+      LLM_TIMEOUT: 30
+      LLM_READ_TIMEOUT: 120
       OPENAI_API_KEY: mock-key
       OPENAI_BASE_URL: http://external-service:9010/v1
 
