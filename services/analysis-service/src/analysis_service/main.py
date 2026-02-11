@@ -68,6 +68,7 @@ LLM_MAX_RETRIES = _env_int("LLM_MAX_RETRIES", 2)
 LLM_RETRY_BACKOFF = _env_float("LLM_RETRY_BACKOFF", 0.5)
 LLM_TIMEOUT = _env_float("LLM_TIMEOUT", 30.0)
 LLM_READ_TIMEOUT = _env_float("LLM_READ_TIMEOUT", 120.0)
+LLM_RESPONSE_FORMAT = os.getenv("LLM_RESPONSE_FORMAT", "").strip().lower()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL") or "https://api.openai.com/v1"
@@ -77,6 +78,7 @@ OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL") or "https://api.openai.com/v1"
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     api_key = OPENAI_API_KEY if LLM_PROVIDER == "openai" else None
     base_url = OPENAI_BASE_URL if LLM_PROVIDER == "openai" else None
+    response_format = {"type": "json_object"} if LLM_RESPONSE_FORMAT == "json_object" else None
     app.state.llm_client = LLMClient(
         provider=LLM_PROVIDER,
         model=LLM_MODEL,
@@ -84,6 +86,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         base_url=base_url,
         temperature=LLM_TEMPERATURE,
         max_tokens=LLM_MAX_TOKENS,
+        response_format=response_format,
         timeout=LLM_TIMEOUT,
         read_timeout=LLM_READ_TIMEOUT,
         max_retries=LLM_MAX_RETRIES,

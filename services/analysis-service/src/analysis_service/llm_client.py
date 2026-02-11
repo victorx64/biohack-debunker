@@ -22,6 +22,7 @@ class LLMClient:
         base_url: str | None,
         temperature: float,
         max_tokens: int,
+        response_format: dict[str, str] | None = None,
         timeout: float = 30.0,
         read_timeout: float | None = None,
         max_retries: int = 2,
@@ -33,6 +34,7 @@ class LLMClient:
         self.base_url = base_url
         self.temperature = temperature
         self.max_tokens = max_tokens
+        self.response_format = response_format
         self.timeout = timeout
         self.read_timeout = read_timeout or timeout
         self.max_retries = max_retries
@@ -101,6 +103,8 @@ class LLMClient:
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
+        if self.response_format:
+            payload["response_format"] = self.response_format
         if openai_reasoning:
             payload["reasoning"] = openai_reasoning
         for attempt in range(self.max_retries + 1):

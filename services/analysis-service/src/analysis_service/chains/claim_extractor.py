@@ -61,6 +61,8 @@ async def extract_claims(
 
 
 def _coerce_claims(data: object) -> List[ClaimDraft]:
+    if isinstance(data, dict):
+        data = data.get("claims")
     if not isinstance(data, list):
         return []
     claims: List[ClaimDraft] = []
