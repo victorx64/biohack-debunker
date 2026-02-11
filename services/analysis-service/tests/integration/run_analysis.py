@@ -30,7 +30,13 @@ def main() -> int:
     base_url = os.environ.get("ANALYSIS_BASE_URL", "http://localhost:8002")
 
     payload = {
-        "transcript": "Omega-3 supplementation reduces triglycerides and may improve cardiovascular outcomes.",
+        "segments": [
+            {
+                "start": 0.0,
+                "end": 5.0,
+                "text": "Omega-3 supplementation reduces triglycerides and may improve cardiovascular outcomes.",
+            }
+        ],
         "claims_per_chunk": 2,
         "research_max_results": 3,
         "research_sources": ["tavily", "pubmed"],

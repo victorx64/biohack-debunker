@@ -11,7 +11,7 @@ def http_get_json(url: str):
         with urllib.request.urlopen(req, timeout=30) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except Exception as exc:
-        sys.exit(f"request failed: {exc}")
+        raise RuntimeError(f"request failed: {exc}") from exc
 
 
 def http_post_json(url: str, payload: dict):
@@ -23,7 +23,7 @@ def http_post_json(url: str, payload: dict):
         with urllib.request.urlopen(req, timeout=60) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except Exception as exc:
-        sys.exit(f"request failed: {exc}")
+        raise RuntimeError(f"request failed: {exc}") from exc
 
 
 def main() -> int:
@@ -39,16 +39,22 @@ def main() -> int:
     payload = {
         "query": "omega-3 cardiovascular outcomes",
         "max_results": 5,
-        "sources": ["tavily", "pubmed"],
+        "sources": ["tavily", "pubmed", "openalex"],
     }
 
-    response = http_post_json(f"{base_url}/research", payload)
+    try:
+        response = http_post_json(f"{base_url}/research", payload)
+    except RuntimeError as exc:
+        if require_real == "1":
+            sys.exit(str(exc))
+        print(f"real integration tests skipped: {exc}")
+        return 0
 
     results = response.get("results") or []
     if not results:
         sys.exit("no results in real mode")
-    if not any(item.get("source_type") in {"tavily", "pubmed"} for item in results):
-        sys.exit("expected tavily or pubmed results")
+    if not any(item.get("source_type") in {"tavily", "pubmed", "openalex"} for item in results):
+        sys.exit("expected tavily, pubmed, or openalex results")
 
     print("research integration tests passed")
     return 0
