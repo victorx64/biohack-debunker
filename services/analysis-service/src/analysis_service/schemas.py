@@ -30,7 +30,7 @@ class EvidenceSource(BaseModel):
     title: str
     url: str
     source_type: str
-    publication_type: str | None = None
+    publication_type: List[str] | None = None
     relevance_score: float = 0.0
     snippet: str | None = None
 

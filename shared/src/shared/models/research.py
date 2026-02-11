@@ -16,7 +16,7 @@ class ResearchSource(BaseModel):
     url: str
     source_type: str
     publication_date: date | None = None
-    publication_type: str | None = None
+    publication_type: List[str] | None = None
     relevance_score: float = 0.0
     snippet: str | None = None
 
