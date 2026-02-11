@@ -5,6 +5,8 @@ from datetime import datetime
 from typing import Iterable, List
 from uuid import UUID, uuid4
 
+import json
+
 import asyncpg
 
 
@@ -237,11 +239,19 @@ async def insert_claims_and_sources(
                         source.get("citation_normalized_percentile"),
                         source.get("primary_source_display_name"),
                         source.get("primary_source_is_core"),
-                        source.get("counts_by_year"),
+                        _jsonb_or_none(source.get("counts_by_year")),
                         source.get("institution_display_names"),
                         _utcnow(),
                     )
     return claim_ids
+
+
+def _jsonb_or_none(value: object) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+    return json.dumps(value)
 
 
 async def fetch_analysis(pool: asyncpg.Pool, analysis_id: UUID) -> asyncpg.Record | None:
