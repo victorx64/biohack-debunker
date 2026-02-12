@@ -60,6 +60,8 @@ def _verdict_emoji(verdict: str | None) -> str:
         return "✅"
     if normalized == "partially_supported":
         return "🟡"
+    if normalized == "unsupported":
+        return "❓"
     if normalized == "misleading":
         return "❌"
     return "⚪"
@@ -82,6 +84,33 @@ def _publication_type_chip(publication_type: str) -> str:
         f"<span style='display:inline-block;margin:0 6px 6px 0;padding:2px 8px;"
         f"border-radius:9999px;font-size:12px;font-weight:600;{style}'>{label}</span>"
     )
+
+
+def _timestamp_to_seconds(timestamp: str | int | float | None) -> int | None:
+    if timestamp is None:
+        return None
+    if isinstance(timestamp, (int, float)):
+        return int(timestamp) if timestamp >= 0 else None
+
+    value = str(timestamp).strip()
+    if not value:
+        return None
+
+    if value.isdigit():
+        return int(value)
+
+    parts = value.split(":")
+    if len(parts) not in {2, 3}:
+        return None
+    if not all(part.isdigit() for part in parts):
+        return None
+
+    numbers = [int(part) for part in parts]
+    if len(numbers) == 2:
+        minutes, seconds = numbers
+        return minutes * 60 + seconds
+    hours, minutes, seconds = numbers
+    return hours * 3600 + minutes * 60 + seconds
 
 
 st.title("Biohack Debunker")
@@ -115,6 +144,9 @@ if analysis_id:
                 st.image(video.get("thumbnail_url"), width=320)
             if video.get("channel"):
                 st.caption(f"Channel: {video.get('channel')}")
+            if video.get("youtube_id"):
+                video_url = f"https://www.youtube.com/watch?v={video.get('youtube_id')}"
+                st.markdown(f"[Open on YouTube]({video_url})")
             if video.get("duration"):
                 st.caption(f"Duration: {video.get('duration')} sec")
 
@@ -138,7 +170,13 @@ if analysis_id:
                     with st.expander(f"{emoji} {title}", expanded=False):
                         timestamp = claim.get("timestamp")
                         if timestamp:
-                            st.caption(f"Timestamp: {timestamp}")
+                            timestamp_seconds = _timestamp_to_seconds(timestamp)
+                            youtube_id = video.get("youtube_id")
+                            if youtube_id and timestamp_seconds is not None:
+                                ts_url = f"https://www.youtube.com/watch?v={youtube_id}&t={timestamp_seconds}s"
+                                st.markdown(f"Timestamp: [{timestamp}]({ts_url})")
+                            else:
+                                st.caption(f"Timestamp: {timestamp}")
                         if verdict:
                             st.write(f"Verdict: {verdict}")
                         if claim.get("confidence") is not None:
