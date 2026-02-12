@@ -43,6 +43,22 @@ def test_gateway_health_and_flow() -> None:
         analysis_id = data.get("analysis_id")
         assert analysis_id
 
+        same = client.post(
+            f"{BASE_URL}/api/v1/analysis",
+            json={"youtube_url": "mock://video"},
+            headers={"x-user-email": "integration@test.local"},
+        )
+        assert same.status_code == 202
+        assert same.json().get("analysis_id") == analysis_id
+
+        forced = client.post(
+            f"{BASE_URL}/api/v1/analysis",
+            json={"youtube_url": "mock://video", "force": True},
+            headers={"x-user-email": "integration@test.local"},
+        )
+        assert forced.status_code == 202
+        assert forced.json().get("analysis_id") != analysis_id
+
         result = _wait_for_completion(client, analysis_id)
         assert result.get("status") == "completed"
         assert result.get("summary")

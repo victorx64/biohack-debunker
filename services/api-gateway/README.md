@@ -38,6 +38,12 @@ curl -sS -X POST "$BASE_URL/api/v1/analysis" \
 	-H "Content-Type: application/json" \
 	-H "x-user-email: demo@example.com" \
 	-d '{"youtube_url":"https://www.youtube.com/watch?v=ITyg5EdfX3o","is_public":true,"research_sources":["pubmed"]}'
+
+# Force new analysis even if this video was already analyzed:
+curl -sS -X POST "$BASE_URL/api/v1/analysis" \
+	-H "Content-Type: application/json" \
+	-H "x-user-email: demo@example.com" \
+	-d '{"youtube_url":"https://www.youtube.com/watch?v=ITyg5EdfX3o","force":true,"is_public":true}'
 ```
 
 Poll analysis status (replace ANALYSIS_ID):

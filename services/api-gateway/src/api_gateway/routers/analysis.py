@@ -48,7 +48,9 @@ async def create_analysis(
     user = await user_dep(request)
 
     pool = request.app.state.db
-    cached = await fetch_latest_analysis_by_url(pool, payload.youtube_url)
+    cached = None
+    if not payload.force:
+        cached = await fetch_latest_analysis_by_url(pool, payload.youtube_url)
     if cached:
         estimated_time_seconds = 0 if cached.get("status") == "completed" else 60
         return AnalysisCreateResponse(

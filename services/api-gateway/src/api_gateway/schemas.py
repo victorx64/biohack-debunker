@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 class AnalysisCreateRequest(BaseModel):
     youtube_url: str = Field(..., min_length=10)
+    force: bool = False
     claims_per_chunk: int = Field(7, ge=1, le=30)
     chunk_size_chars: int = Field(4000, ge=500, le=20000)
     research_max_results: int = Field(25, ge=1, le=25)
