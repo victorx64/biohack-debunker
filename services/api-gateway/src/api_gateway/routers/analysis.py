@@ -11,6 +11,7 @@ from ..db import (
     fetch_sources,
     format_timestamp,
     create_analysis as create_analysis_row,
+    fetch_latest_analysis_by_url,
 )
 from ..middleware.auth import user_context_dependency
 from ..middleware.rate_limit import rate_limit_dependency
@@ -47,6 +48,16 @@ async def create_analysis(
     user = await user_dep(request)
 
     pool = request.app.state.db
+    cached = await fetch_latest_analysis_by_url(pool, payload.youtube_url)
+    if cached:
+        estimated_time_seconds = 0 if cached.get("status") == "completed" else 60
+        return AnalysisCreateResponse(
+            analysis_id=cached.get("id"),
+            status=cached.get("status"),
+            estimated_time_seconds=estimated_time_seconds,
+            poll_url=f"/api/v1/analysis/{cached.get('id')}",
+        )
+
     analysis_id = await create_analysis_row(
         pool,
         user.user_id,

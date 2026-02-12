@@ -236,6 +236,17 @@ async def fetch_analysis(pool: asyncpg.Pool, analysis_id: UUID) -> asyncpg.Recor
     )
 
 
+async def fetch_latest_analysis_by_url(
+    pool: asyncpg.Pool,
+    youtube_url: str,
+) -> asyncpg.Record | None:
+    return await pool.fetchrow(
+        "SELECT * FROM analyses WHERE youtube_url=$1 AND status != 'failed' "
+        "ORDER BY completed_at DESC NULLS LAST, created_at DESC LIMIT 1",
+        youtube_url,
+    )
+
+
 async def fetch_claims(pool: asyncpg.Pool, analysis_id: UUID) -> List[asyncpg.Record]:
     return await pool.fetch(
         "SELECT * FROM claims WHERE analysis_id=$1 ORDER BY created_at",
