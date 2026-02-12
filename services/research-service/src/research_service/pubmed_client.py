@@ -91,8 +91,8 @@ class PubMedClient:
             self._rate_limiter = _RedisRateLimiter(redis_client, max_rps)
 
     def build_query(self, query: str) -> str:
-        start_year = date.today().year - 10
-        date_range = f"\"{start_year}/01/01\"[Date - Publication] : \"3000\"[Date - Publication]"
+        # start_year = date.today().year - 10
+        # date_range = f"\"{start_year}/01/01\"[Date - Publication] : \"3000\"[Date - Publication]"
         evidence_filter = (
             "(\"Meta-Analysis\"[Publication Type] OR \"Systematic Review\"[Publication Type] "
             "OR \"Randomized Controlled Trial\"[Publication Type] OR \"Clinical Trial\"[Publication Type])"
@@ -104,7 +104,8 @@ class PubMedClient:
             return query
         return (
             f"({query}) AND {evidence_filter} AND {humans_filter} "
-            f"AND {language_filter} AND ({date_range})"
+            f"AND {language_filter}"
+            # f"AND {language_filter} AND ({date_range})"
         )
 
     async def search(self, query: str, max_results: int) -> List[ResearchSource]:
