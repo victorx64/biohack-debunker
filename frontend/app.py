@@ -43,7 +43,7 @@ def _api_request(method: str, path: str, payload: Dict[str, Any] | None = None) 
 
 def _get_query_params() -> Dict[str, Any]:
     try:
-        return st.experimental_get_query_params()
+        return st.query_params
     except AttributeError:
         return dict(st.query_params)
 
@@ -53,6 +53,19 @@ def _set_query_params(**kwargs: str) -> None:
         st.experimental_set_query_params(**kwargs)
     except AttributeError:
         st.query_params.update(kwargs)
+
+
+def _verdict_emoji(verdict: str | None) -> str:
+    if not verdict:
+        return "⚪"
+    normalized = verdict.strip().lower()
+    if normalized == "supported":
+        return "✅"
+    if normalized == "partially_supported":
+        return "🟡"
+    if normalized in {"unsupported", "misleading"}:
+        return "❌"
+    return "⚪"
 
 
 st.title("Biohack Debunker")
@@ -103,13 +116,15 @@ if analysis_id:
             if claims:
                 st.markdown("### Claims")
                 for claim in claims:
+                    verdict = claim.get("verdict")
+                    emoji = _verdict_emoji(verdict)
                     title = claim.get("text") or "Claim"
-                    with st.expander(title, expanded=False):
+                    with st.expander(f"{emoji} {title}", expanded=False):
                         timestamp = claim.get("timestamp")
                         if timestamp:
                             st.caption(f"Timestamp: {timestamp}")
-                        if claim.get("verdict"):
-                            st.write(f"Verdict: {claim.get('verdict')}")
+                        if verdict:
+                            st.write(f"Verdict: {verdict}")
                         if claim.get("confidence") is not None:
                             st.write(f"Confidence: {claim.get('confidence')}")
                         if claim.get("evidence_level"):
@@ -161,7 +176,7 @@ else:
                     st.markdown(
                         f"Open the results page: [View analysis](?analysis_id={analysis_id})"
                     )
-                if poll_url:
-                    st.caption(f"API status endpoint: {API_BASE_URL}{poll_url}")
+                # if poll_url:
+                #     st.caption(f"API status endpoint: {API_BASE_URL}{poll_url}")
                 if response.get("status") in {"pending", "processing"}:
                     st.info("Processing is in progress. You can share the results link.")
