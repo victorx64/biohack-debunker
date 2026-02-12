@@ -7,6 +7,7 @@ Ensure all double quotes inside string values are escaped (\").
 
 Return a JSON object with a top-level "claims" array. Do not return a bare array.
 The "claims" array must contain at most {claims_per_chunk} objects. Do not exceed this limit.
+If more valid claims are present than the limit allows, keep only the most extraordinary claims first (surprising, counterintuitive, highly specific, or high-impact health assertions), then fill remaining slots with the next most verification-worthy claims.
 
 Each object in "claims" has fields:
 - claim (string)

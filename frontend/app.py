@@ -1,5 +1,6 @@
 import json
 import os
+from collections import Counter
 from html import escape
 from typing import Any, Dict
 from urllib.error import HTTPError, URLError
@@ -65,6 +66,19 @@ def _verdict_emoji(verdict: str | None) -> str:
     if normalized == "misleading":
         return "❌"
     return "⚪"
+
+
+def _verdict_label(verdict: str | None) -> str:
+    if not verdict:
+        return "Unknown"
+    normalized = verdict.strip().lower()
+    labels = {
+        "supported": "Supported",
+        "partially_supported": "Partially supported",
+        "unsupported": "Unsupported",
+        "misleading": "Misleading",
+    }
+    return labels.get(normalized, "Unknown")
 
 
 def _publication_type_chip(publication_type: str) -> str:
@@ -162,6 +176,21 @@ if analysis_id:
 
             claims = analysis.get("claims") or []
             if claims:
+                st.markdown("### Claim statistics")
+                verdict_counts = Counter(_verdict_label(claim.get("verdict")) for claim in claims)
+                st.write(f"Total claims: {len(claims)}")
+                verdict_order = [
+                    ("supported", "Supported"),
+                    ("partially_supported", "Partially supported"),
+                    ("unsupported", "Unsupported"),
+                    ("misleading", "Misleading"),
+                    (None, "Unknown"),
+                ]
+                for verdict_key, verdict_name in verdict_order:
+                    count = verdict_counts.get(verdict_name, 0)
+                    if count:
+                        st.write(f"{_verdict_emoji(verdict_key)} {verdict_name}: {count}")
+
                 st.markdown("### Claims")
                 for claim in claims:
                     verdict = claim.get("verdict")
@@ -213,6 +242,20 @@ if analysis_id:
         _set_query_params()
         st.experimental_rerun()
 else:
+    st.markdown(
+        """
+        **Scientific verification of medical claims from YouTube videos.**
+
+        Submit a video link, and the system automatically:
+        - extracts **medical claims** from the transcript;
+        - runs targeted PubMed searches and prioritizes the most informative evidence types:
+            **meta-analyses, systematic reviews, randomized controlled trials, and clinical trials**;
+        - includes only studies relevant to **human populations** (Humans);
+        - produces an **evidence-based verdict** for each claim using the retrieved papers.
+
+        The output is a structured, transparent, evidence-based assessment of each claim with linked sources.
+        """
+    )
     st.subheader("Start a new analysis")
     with st.form("analysis_form"):
         password = st.text_input("Password", type="password")
@@ -226,7 +269,7 @@ else:
             st.error("Please provide a YouTube URL.")
         else:
             try:
-                payload = {"youtube_url": youtube_url, "is_public": True}
+                payload = {"youtube_url": youtube_url, "is_public": True, "force": True}
                 response = _api_request("POST", "/api/v1/analysis", payload)
             except RuntimeError as exc:
                 st.error(str(exc))
