@@ -1,0 +1,24 @@
+[
+  {
+    "id": "case-001",
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 8.0,
+        "text": "Omega-3 supplementation reduces triglycerides and may improve cardiovascular outcomes."
+      }
+    ],
+    "analysis_params": {
+      "claims_per_chunk": 1,
+      "chunk_size_chars": 2000,
+      "research_max_results": 25,
+      "research_sources": ["pubmed"]
+    },
+    "expected_claims": [
+      {
+        "claim": "Omega-3 supplementation reduces triglycerides.",
+        "verdict": "supported"
+      }
+    ]
+  }
+]

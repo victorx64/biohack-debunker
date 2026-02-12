@@ -1,0 +1,15 @@
+services:
+  deepeval-analysis:
+    build:
+      context: ./services/deepeval-runner
+    working_dir: /app
+    volumes:
+      - ./services/analysis-service:/app/services/analysis-service
+      - ./shared:/app/shared
+    env_file:
+      - .env
+    environment:
+      ANALYSIS_BASE_URL: ${ANALYSIS_BASE_URL:-http://analysis-service:8002}
+    command: pytest services/analysis-service/tests/deepeval/test_deepeval_analysis.py
+    depends_on:
+      - analysis-service
