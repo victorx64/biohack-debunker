@@ -50,6 +50,8 @@ class ClaimInfo(BaseModel):
     verdict: str | None = None
     confidence: float | None = None
     explanation: str | None = None
+    evidence_level: str | None = None
+    study_type: str | None = None
     sources: List[SourceInfo] = Field(default_factory=list)
     costs: "ClaimCosts" = Field(default_factory=lambda: ClaimCosts())
 

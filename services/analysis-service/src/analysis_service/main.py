@@ -201,6 +201,8 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
             confidence=analysis.confidence,
             explanation=analysis.explanation,
             nuance=analysis.nuance,
+            evidence_level=analysis.evidence_level,
+            study_type=analysis.study_type,
             sources=sources,
             costs=ClaimCosts(
                 pubmed_requests=research_usage.get("pubmed_requests", 0),

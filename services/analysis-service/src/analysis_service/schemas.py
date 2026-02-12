@@ -41,6 +41,8 @@ class ClaimAnalysis(BaseModel):
     confidence: float
     explanation: str
     nuance: str | None = None
+    evidence_level: str | None = None
+    study_type: str | None = None
 
 
 class ClaimResult(BaseModel):
@@ -53,6 +55,8 @@ class ClaimResult(BaseModel):
     confidence: float
     explanation: str
     nuance: str | None = None
+    evidence_level: str | None = None
+    study_type: str | None = None
     sources: List[EvidenceSource] = Field(default_factory=list)
     costs: "ClaimCosts" = Field(default_factory=lambda: ClaimCosts())
 

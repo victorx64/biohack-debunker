@@ -35,7 +35,7 @@ async def analyze_claim(
         },
         openai_reasoning={"effort": "none"},
     )
-    return _coerce_analysis(data), usage
+    return _coerce_analysis(data, sources), usage
 
 
 def _format_evidence(sources: List[EvidenceSource]) -> str:
@@ -48,9 +48,9 @@ def _format_evidence(sources: List[EvidenceSource]) -> str:
                 {
                     "title": source.title,
                     "url": source.url,
-                    # "source_type": source.source_type,
+                    "source_type": source.source_type,
                     "publication_type": source.publication_type,
-                    # "relevance_score": source.relevance_score,
+                    "relevance_score": source.relevance_score,
                     "abstract": source.snippet,
                 },
                 ensure_ascii=True,
@@ -59,18 +59,151 @@ def _format_evidence(sources: List[EvidenceSource]) -> str:
     return "\n".join(items)
 
 
-def _coerce_analysis(data: object) -> ClaimAnalysis:
+def _coerce_analysis(data: object, sources: List[EvidenceSource]) -> ClaimAnalysis:
     if not isinstance(data, dict):
         raise RuntimeError("LLM response missing analysis fields")
     verdict = str(data.get("verdict") or "unsupported").strip()
     confidence = float(data.get("confidence") or 0.5)
     explanation = str(data.get("explanation") or "Insufficient evidence available.").strip()
     nuance = data.get("nuance")
-    return ClaimAnalysis(
+    evidence_level = _normalize_label(data.get("evidence_level"))
+    study_type = _normalize_label(data.get("study_type"))
+    if not evidence_level or not study_type:
+        inferred_level, inferred_type = _infer_evidence_classification(sources)
+        evidence_level = evidence_level or inferred_level
+        study_type = study_type or inferred_type
+    analysis = ClaimAnalysis(
         verdict=verdict,
         confidence=max(0.0, min(confidence, 1.0)),
         explanation=explanation,
         nuance=str(nuance).strip() if nuance else None,
+        evidence_level=evidence_level,
+        study_type=study_type,
+    )
+    return _apply_evidence_policy(analysis, sources)
+
+
+def _normalize_label(value: object) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip().lower()
+    return text or None
+
+
+def _infer_evidence_classification(
+    sources: List[EvidenceSource],
+) -> tuple[str, str]:
+    best_type = "unknown"
+    best_rank = 0
+    for source in sources:
+        study_type = _classify_source(source)
+        rank = _study_type_rank(study_type)
+        if rank > best_rank:
+            best_rank = rank
+            best_type = study_type
+    return _evidence_level_for_type(best_type), best_type
+
+
+def _classify_source(source: EvidenceSource) -> str:
+    tags: list[str] = []
+    if source.publication_type:
+        tags.extend(tag.lower() for tag in source.publication_type if tag)
+    if source.source_type:
+        tags.append(source.source_type.lower())
+    joined = " | ".join(tags)
+    if "meta-analysis" in joined or "meta analysis" in joined:
+        return "meta_analysis"
+    if "systematic review" in joined:
+        return "systematic_review"
+    if "randomized controlled trial" in joined or "randomised controlled trial" in joined:
+        return "rct"
+    if "randomized" in joined or "randomised" in joined:
+        return "rct"
+    if "clinical trial" in joined:
+        return "clinical_trial"
+    if "cohort" in joined or "case-control" in joined or "case control" in joined:
+        return "observational"
+    if "cross-sectional" in joined or "observational" in joined:
+        return "observational"
+    if "case reports" in joined or "case report" in joined:
+        return "case_report"
+    if "in vitro" in joined or "cell line" in joined or "cell culture" in joined:
+        return "in_vitro"
+    if "animals" in joined or "animal" in joined or "rodent" in joined:
+        return "animal"
+    if "mice" in joined or "mouse" in joined or "rat" in joined:
+        return "animal"
+    return "unknown"
+
+
+def _study_type_rank(study_type: str) -> int:
+    return {
+        "meta_analysis": 6,
+        "systematic_review": 5,
+        "rct": 4,
+        "clinical_trial": 3,
+        "observational": 2,
+        "case_report": 1,
+        "animal": 1,
+        "in_vitro": 1,
+        "unknown": 0,
+    }.get(study_type, 0)
+
+
+def _evidence_level_for_type(study_type: str) -> str:
+    if study_type in {"meta_analysis", "systematic_review", "rct", "clinical_trial"}:
+        return "high"
+    if study_type == "observational":
+        return "moderate"
+    if study_type in {"case_report", "animal", "in_vitro"}:
+        return "low"
+    return "very_low"
+
+
+def _has_human_evidence(sources: List[EvidenceSource]) -> bool:
+    for source in sources:
+        for tag in source.publication_type or []:
+            if str(tag).strip().lower() == "humans":
+                return True
+    return False
+
+
+def _apply_evidence_policy(
+    analysis: ClaimAnalysis,
+    sources: List[EvidenceSource],
+) -> ClaimAnalysis:
+    verdict = analysis.verdict
+    confidence = analysis.confidence
+    nuance = analysis.nuance
+    evidence_level = analysis.evidence_level or "very_low"
+    study_type = analysis.study_type or "unknown"
+
+    if not sources and verdict != "unsupported":
+        verdict = "unsupported"
+        confidence = min(confidence, 0.2)
+
+    if evidence_level in {"low", "very_low"}:
+        if verdict == "supported":
+            verdict = "partially_supported"
+        confidence = min(confidence, 0.55)
+
+    if study_type in {"animal", "in_vitro"} and not _has_human_evidence(sources):
+        if verdict in {"supported", "partially_supported"}:
+            verdict = "unsupported"
+        confidence = min(confidence, 0.4)
+        note = "Evidence is limited to non-human or in vitro studies; human efficacy is unproven."
+        if not nuance:
+            nuance = note
+        elif note not in nuance:
+            nuance = f"{nuance} {note}".strip()
+
+    return ClaimAnalysis(
+        verdict=verdict,
+        confidence=max(0.0, min(confidence, 1.0)),
+        explanation=analysis.explanation,
+        nuance=nuance,
+        evidence_level=evidence_level,
+        study_type=study_type,
     )
 
 

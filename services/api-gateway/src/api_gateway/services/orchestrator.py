@@ -100,6 +100,8 @@ class Orchestrator:
                     verdict=claim.get("verdict"),
                     confidence=claim.get("confidence"),
                     explanation=claim.get("explanation"),
+                    evidence_level=claim.get("evidence_level"),
+                    study_type=claim.get("study_type"),
                     search_query=claim.get("search_query"),
                     sources=claim.get("sources") or [],
                     pubmed_requests=int(costs.get("pubmed_requests") or 0),
