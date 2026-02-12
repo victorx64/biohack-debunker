@@ -30,16 +30,10 @@ def main() -> int:
     base_url = os.environ.get("RESEARCH_BASE_URL", "http://localhost:8003")
     require_real = os.environ.get("RESEARCH_REQUIRE_REAL", "0")
 
-    if not os.environ.get("TAVILY_API_KEY") and require_real == "1":
-        sys.exit("TAVILY_API_KEY is required for real integration tests")
-    if not os.environ.get("TAVILY_API_KEY"):
-        print("TAVILY_API_KEY not set; skipping real integration tests")
-        return 0
-
     payload = {
         "query": "omega-3 cardiovascular outcomes",
         "max_results": 5,
-        "sources": ["tavily", "pubmed", "openalex"],
+        "sources": ["pubmed"],
     }
 
     try:
@@ -53,8 +47,8 @@ def main() -> int:
     results = response.get("results") or []
     if not results:
         sys.exit("no results in real mode")
-    if not any(item.get("source_type") in {"tavily", "pubmed", "openalex"} for item in results):
-        sys.exit("expected tavily, pubmed, or openalex results")
+    if not any(item.get("source_type") in {"pubmed"} for item in results):
+        sys.exit("expected pubmed results")
 
     print("research integration tests passed")
     return 0

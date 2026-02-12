@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from typing import Dict, List
 from uuid import UUID
 
@@ -28,20 +27,6 @@ from ..schemas import (
 
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
-
-
-def _parse_counts_by_year(value: object) -> list | None:
-    if value is None:
-        return None
-    if isinstance(value, list):
-        return value
-    if isinstance(value, str):
-        try:
-            parsed = json.loads(value)
-        except json.JSONDecodeError:
-            return None
-        return parsed if isinstance(parsed, list) else None
-    return None
 
 
 @router.post(
@@ -123,13 +108,6 @@ async def get_analysis_status(
                 publication_type=source.get("publication_type"),
                 snippet=source.get("snippet"),
                 relevance_score=source.get("relevance_score"),
-                cited_by_count=source.get("cited_by_count"),
-                fwci=source.get("fwci"),
-                citation_normalized_percentile=source.get("citation_normalized_percentile"),
-                primary_source_display_name=source.get("primary_source_display_name"),
-                primary_source_is_core=source.get("primary_source_is_core"),
-                counts_by_year=_parse_counts_by_year(source.get("counts_by_year")),
-                institution_display_names=source.get("institution_display_names"),
             )
             sources_by_claim.setdefault(source.get("claim_id"), []).append(source_info)
 
@@ -147,8 +125,6 @@ async def get_analysis_status(
                     sources=sources_by_claim.get(claim.get("id"), []),
                     costs=ClaimCosts(
                         pubmed_requests=claim.get("pubmed_requests") or 0,
-                        tavily_requests=claim.get("tavily_requests") or 0,
-                        openalex_requests=claim.get("openalex_requests") or 0,
                         llm_prompt_tokens=claim.get("llm_prompt_tokens") or 0,
                         llm_completion_tokens=claim.get("llm_completion_tokens") or 0,
                     ),
@@ -164,8 +140,6 @@ async def get_analysis_status(
         claims=claims,
         costs=AnalysisCosts(
             pubmed_requests=row.get("total_pubmed_requests") or 0,
-            tavily_requests=row.get("total_tavily_requests") or 0,
-            openalex_requests=row.get("total_openalex_requests") or 0,
             llm_prompt_tokens=row.get("total_llm_prompt_tokens") or 0,
             llm_completion_tokens=row.get("total_llm_completion_tokens") or 0,
             report_prompt_tokens=row.get("report_llm_prompt_tokens") or 0,

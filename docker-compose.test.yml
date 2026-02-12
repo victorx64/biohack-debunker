@@ -14,8 +14,6 @@ services:
     depends_on:
       - external-service
     environment:
-      TAVILY_API_KEY: mock-key
-      TAVILY_BASE_URL: http://external-service:9010/tavily
       PUBMED_BASE_URL: http://external-service:9010/pubmed
 
   external-service:

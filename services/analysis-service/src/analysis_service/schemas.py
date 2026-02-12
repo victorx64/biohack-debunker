@@ -10,7 +10,7 @@ class AnalysisRequest(BaseModel):
     claims_per_chunk: int = Field(8, ge=1, le=30)
     chunk_size_chars: int = Field(5000, ge=500, le=20000)
     research_max_results: int = Field(5, ge=1, le=20)
-    research_sources: List[str] = Field(default_factory=lambda: ["tavily", "pubmed"])
+    research_sources: List[str] = Field(default_factory=lambda: ["pubmed"])
 
 
 class TranscriptSegment(BaseModel):
@@ -27,12 +27,6 @@ class ClaimDraft(BaseModel):
     search_query: str | None = None
 
 
-class CountsByYear(BaseModel):
-    year: int
-    cited_by_count: int = 0
-    works_count: int = 0
-
-
 class EvidenceSource(BaseModel):
     title: str
     url: str
@@ -40,13 +34,6 @@ class EvidenceSource(BaseModel):
     publication_type: List[str] | None = None
     relevance_score: float = 0.0
     snippet: str | None = None
-    cited_by_count: int | None = None
-    fwci: float | None = None
-    citation_normalized_percentile: float | None = None
-    primary_source_display_name: str | None = None
-    primary_source_is_core: bool | None = None
-    counts_by_year: List[CountsByYear] | None = None
-    institution_display_names: List[str] | None = None
 
 
 class ClaimAnalysis(BaseModel):
@@ -72,16 +59,12 @@ class ClaimResult(BaseModel):
 
 class ClaimCosts(BaseModel):
     pubmed_requests: int = 0
-    tavily_requests: int = 0
-    openalex_requests: int = 0
     llm_prompt_tokens: int = 0
     llm_completion_tokens: int = 0
 
 
 class AnalysisCosts(BaseModel):
     pubmed_requests: int = 0
-    tavily_requests: int = 0
-    openalex_requests: int = 0
     llm_prompt_tokens: int = 0
     llm_completion_tokens: int = 0
     report_prompt_tokens: int = 0

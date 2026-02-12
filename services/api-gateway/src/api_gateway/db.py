@@ -5,8 +5,6 @@ from datetime import datetime
 from typing import Iterable, List
 from uuid import UUID, uuid4
 
-import json
-
 import asyncpg
 
 
@@ -21,8 +19,6 @@ class ClaimInsert:
     search_query: str | None
     sources: list
     pubmed_requests: int = 0
-    tavily_requests: int = 0
-    openalex_requests: int = 0
     llm_prompt_tokens: int = 0
     llm_completion_tokens: int = 0
 
@@ -151,8 +147,6 @@ async def update_results(
     overall_rating: str | None,
     completed_at: datetime,
     total_pubmed_requests: int,
-    total_tavily_requests: int,
-    total_openalex_requests: int,
     total_llm_prompt_tokens: int,
     total_llm_completion_tokens: int,
     report_llm_prompt_tokens: int,
@@ -160,17 +154,14 @@ async def update_results(
 ) -> None:
     await pool.execute(
         "UPDATE analyses SET summary=$2, overall_rating=$3, status=$4, completed_at=$5, "
-        "total_pubmed_requests=$6, total_tavily_requests=$7, total_openalex_requests=$8, "
-        "total_llm_prompt_tokens=$9, total_llm_completion_tokens=$10, "
-        "report_llm_prompt_tokens=$11, report_llm_completion_tokens=$12 WHERE id=$1",
+        "total_pubmed_requests=$6, total_llm_prompt_tokens=$7, total_llm_completion_tokens=$8, "
+        "report_llm_prompt_tokens=$9, report_llm_completion_tokens=$10 WHERE id=$1",
         analysis_id,
         summary,
         overall_rating,
         "completed",
         completed_at,
         total_pubmed_requests,
-        total_tavily_requests,
-        total_openalex_requests,
         total_llm_prompt_tokens,
         total_llm_completion_tokens,
         report_llm_prompt_tokens,
@@ -192,10 +183,10 @@ async def insert_claims_and_sources(
                 await conn.execute(
                     "INSERT INTO claims "
                     "(id, analysis_id, claim_text, timestamp_start, category, verdict, "
-                    "confidence, explanation, search_query, pubmed_requests, tavily_requests, "
-                    "openalex_requests, llm_prompt_tokens, llm_completion_tokens, "
+                    "confidence, explanation, search_query, pubmed_requests, "
+                    "llm_prompt_tokens, llm_completion_tokens, "
                     "created_at) "
-                    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)",
+                    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
                     claim_id,
                     analysis_id,
                     claim.claim,
@@ -206,8 +197,6 @@ async def insert_claims_and_sources(
                     claim.explanation,
                     claim.search_query,
                     claim.pubmed_requests,
-                    claim.tavily_requests,
-                    claim.openalex_requests,
                     claim.llm_prompt_tokens,
                     claim.llm_completion_tokens,
                     _utcnow(),
@@ -219,12 +208,8 @@ async def insert_claims_and_sources(
                     await conn.execute(
                         "INSERT INTO sources "
                         "(id, claim_id, title, url, source_type, publication_date, "
-                        "publication_type, relevance_score, snippet, cited_by_count, "
-                        "fwci, citation_normalized_percentile, primary_source_display_name, "
-                        "primary_source_is_core, counts_by_year, institution_display_names, "
-                        "created_at) "
-                        "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, "
-                        "$13, $14, $15, $16, $17)",
+                        "publication_type, relevance_score, snippet, created_at) "
+                        "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
                         source_id,
                         claim_id,
                         source.get("title"),
@@ -234,24 +219,9 @@ async def insert_claims_and_sources(
                         source.get("publication_type"),
                         source.get("relevance_score"),
                         source.get("snippet"),
-                        source.get("cited_by_count"),
-                        source.get("fwci"),
-                        source.get("citation_normalized_percentile"),
-                        source.get("primary_source_display_name"),
-                        source.get("primary_source_is_core"),
-                        _jsonb_or_none(source.get("counts_by_year")),
-                        source.get("institution_display_names"),
                         _utcnow(),
                     )
     return claim_ids
-
-
-def _jsonb_or_none(value: object) -> str | None:
-    if value is None:
-        return None
-    if isinstance(value, str):
-        return value
-    return json.dumps(value)
 
 
 async def fetch_analysis(pool: asyncpg.Pool, analysis_id: UUID) -> asyncpg.Record | None:

@@ -1,37 +1,11 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Any, Dict, List
 
-from fastapi import FastAPI, Query, Request
+from fastapi import FastAPI, Request
 
 app = FastAPI(title="External Service", version="0.1.0")
-
-_OPENALEX_RESPONSE_PATH = Path(__file__).with_name("open-alex-search.json")
-
-
-def _load_openalex_response() -> Dict[str, Any]:
-    if not _OPENALEX_RESPONSE_PATH.exists():
-        return {"meta": {"count": 0, "page": 1, "per_page": 0, "db_response_time_ms": 0}, "results": []}
-    return json.loads(_OPENALEX_RESPONSE_PATH.read_text(encoding="utf-8"))
-
-
-_OPENALEX_RESPONSE = _load_openalex_response()
-
-
-def _tavily_results(query: str, max_results: int) -> List[Dict[str, Any]]:
-    results: List[Dict[str, Any]] = []
-    for idx in range(1, max_results + 1):
-        results.append(
-            {
-                "title": f"Mock Tavily result {idx} for {query}",
-                "url": f"https://example.test/tavily/{idx}",
-                "score": 0.9 - (idx * 0.05),
-                "content": f"Mock content for {query} (result {idx}).",
-            }
-        )
-    return results
 
 
 def _pubmed_ids(max_results: int) -> List[str]:
@@ -79,32 +53,6 @@ def _openai_response(system_prompt: str) -> str:
             }
         )
     return json.dumps({"summary": "Mock summary", "overall_rating": "mixed"})
-
-
-@app.post("/tavily/search")
-async def tavily_search(payload: Dict[str, Any]) -> Dict[str, Any]:
-    query = str(payload.get("query") or "")
-    max_results = int(payload.get("max_results") or 3)
-    return {"results": _tavily_results(query, max_results)}
-
-
-@app.get("/works")
-async def openalex_search(
-    search: str | None = None,
-    per_page: int = Query(25, alias="per-page"),
-    page: int = 1,
-) -> Dict[str, Any]:
-    _ = search
-    per_page = max(per_page, 1)
-    page = max(page, 1)
-
-    meta = dict(_OPENALEX_RESPONSE.get("meta") or {})
-    results = list(_OPENALEX_RESPONSE.get("results") or [])
-    start = (page - 1) * per_page
-    end = start + per_page
-    meta["page"] = page
-    meta["per_page"] = per_page
-    return {"meta": meta, "results": results[start:end]}
 
 
 @app.get("/pubmed/esearch.fcgi")

@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import urllib.request
+import time
 
 
 def http_get_json(url: str):
@@ -26,8 +27,22 @@ def http_post_json(url: str, payload: dict):
         sys.exit(f"request failed: {exc}")
 
 
+def wait_for_service(base_url: str, timeout_seconds: float = 10.0) -> None:
+    deadline = time.time() + timeout_seconds
+    health_url = f"{base_url.rstrip('/')}/health"
+    while time.time() < deadline:
+        try:
+            http_get_json(health_url)
+            return
+        except SystemExit:
+            time.sleep(0.5)
+    sys.exit("analysis service not ready")
+
+
 def main() -> int:
     base_url = os.environ.get("ANALYSIS_BASE_URL", "http://localhost:8002")
+
+    wait_for_service(base_url)
 
     payload = {
         "segments": [
@@ -39,7 +54,7 @@ def main() -> int:
         ],
         "claims_per_chunk": 2,
         "research_max_results": 3,
-        "research_sources": ["tavily", "pubmed"],
+        "research_sources": ["pubmed"],
     }
 
     response = http_post_json(f"{base_url}/analyze", payload)
@@ -55,8 +70,8 @@ def main() -> int:
 
     if not source_types:
         sys.exit("no evidence sources returned")
-    if not source_types.intersection({"tavily", "pubmed"}):
-        sys.exit("expected tavily or pubmed sources")
+    if not source_types.intersection({"pubmed"}):
+        sys.exit("expected pubmed sources")
 
     print("analysis integration tests passed")
     return 0

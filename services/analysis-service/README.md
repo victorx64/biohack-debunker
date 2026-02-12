@@ -27,6 +27,6 @@ curl -s http://localhost:8002/analyze \
 		"transcript": "Creatine supplementation improves strength and power output in trained athletes when taken consistently.",
 		"claims_per_chunk": 3,
 		"research_max_results": 3,
-		"research_sources": ["tavily", "pubmed"]
+		"research_sources": ["pubmed"]
 	}'
 ```

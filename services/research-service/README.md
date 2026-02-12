@@ -1,11 +1,11 @@
 # Research Service
 
-FastAPI service that retrieves medical research evidence from Tavily and PubMed and
-caches results for faster repeat queries.
+FastAPI service that retrieves medical research evidence from PubMed and caches
+results for faster repeat queries.
 
 ## What it does
 
-- Searches external sources (Tavily, PubMed) for a query.
+- Searches PubMed for a query.
 - Normalizes and ranks results by relevance.
 - Caches responses to reduce repeated lookups.
 
@@ -26,6 +26,6 @@ curl -s http://localhost:8003/research \
 	-d '{
 		"query": "creatine muscle performance",
 		"max_results": 5,
-		"sources": ["tavily", "pubmed"]
+		"sources": ["pubmed"]
 	}'
 ```

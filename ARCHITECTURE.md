@@ -33,7 +33,7 @@ Solution: An AI service that:
 │                      │    Service     │ │   Service    │ │    Service    │  │
 │                      │    (Python)    │ │   (Python)   │ │   (Python)    │  │
 │                      │    Port 8001   │ │   Port 8002  │ │   Port 8003   │  │
-│                      │   yt-dlp       │ │   LLM calls  │ │  Tavily/PubMed│  │
+│                      │   yt-dlp       │ │   LLM calls  │ │    PubMed    │  │
 │                      │                │ │              │ │  In-memory    │  │
 │                      │                │ │              │ │  cache        │  │
 │                      └───────┬────────┘ └──────┬───────┘ └───────┬───────┘  │
@@ -100,10 +100,9 @@ biohack-debunker/
 │   │   └── tests/
 │   │       └── integration/
 │   │
-│   └── research-service/        # Tavily + PubMed retrieval
+│   └── research-service/        # PubMed retrieval
 │       ├── src/research_service/
 │       │   ├── main.py
-│       │   ├── tavily_client.py
 │       │   ├── pubmed_client.py
 │       │   └── vector_store.py   # in-memory cache
 │       └── tests/
@@ -213,7 +212,6 @@ CREATE TABLE analyses (
     is_public BOOLEAN DEFAULT true,
 
     total_pubmed_requests INTEGER DEFAULT 0,
-    total_tavily_requests INTEGER DEFAULT 0,
     total_llm_prompt_tokens INTEGER DEFAULT 0,
     total_llm_completion_tokens INTEGER DEFAULT 0,
     report_llm_prompt_tokens INTEGER DEFAULT 0,
@@ -234,7 +232,6 @@ CREATE TABLE claims (
     explanation TEXT,
 
     pubmed_requests INTEGER DEFAULT 0,
-    tavily_requests INTEGER DEFAULT 0,
     llm_prompt_tokens INTEGER DEFAULT 0,
     llm_completion_tokens INTEGER DEFAULT 0,
 
@@ -283,7 +280,7 @@ Content-Type: application/json
   "claims_per_chunk": 10,
   "chunk_size_chars": 5000,
   "research_max_results": 5,
-  "research_sources": ["tavily", "pubmed"],
+  "research_sources": ["pubmed"],
   "is_public": true
 }
 ```
@@ -338,7 +335,6 @@ Response 200 (completed):
       ],
       "costs": {
         "pubmed_requests": 1,
-        "tavily_requests": 1,
         "llm_prompt_tokens": 500,
         "llm_completion_tokens": 200
       }
@@ -346,7 +342,6 @@ Response 200 (completed):
   ],
   "costs": {
     "pubmed_requests": 3,
-    "tavily_requests": 3,
     "llm_prompt_tokens": 3500,
     "llm_completion_tokens": 1200,
     "report_prompt_tokens": 400,
@@ -415,7 +410,7 @@ CLAIM_EXTRACTION_PROMPT = """
 You are a medical claim extraction specialist. Analyze the transcript and
 extract all health-related claims suitable for verification.
 
-Claims must be in English so they are easy to search in PubMed and Tavily.
+Claims must be in English so they are easy to search in PubMed.
 
 Return ONLY valid JSON. Do not include markdown, code fences, or extra text.
 
@@ -509,8 +504,6 @@ ANALYSIS_MAX_CONCURRENT_RESEARCH=5
 RESEARCH_SERVICE_URL=http://research-service:8003
 
 # Research Service
-TAVILY_API_KEY=tvly-...
-TAVILY_BASE_URL=https://api.tavily.com
 PUBMED_API_KEY=
 PUBMED_BASE_URL=https://eutils.ncbi.nlm.nih.gov/entrez/eutils
 RESEARCH_CACHE_TTL_SECONDS=3600
@@ -528,7 +521,7 @@ TRANSCRIPTION_MAX_CHARS=120000
 Prerequisites:
 - Docker and Docker Compose v2
 - OpenAI API key
-- Tavily API key
+- PubMed API key (optional)
 
 Run locally:
 

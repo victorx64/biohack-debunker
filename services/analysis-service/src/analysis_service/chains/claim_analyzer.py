@@ -109,18 +109,9 @@ async def fetch_research(
                 publication_type=item.get("publication_type"),
                 relevance_score=float(item.get("relevance_score") or 0.0),
                 snippet=item.get("snippet"),
-                cited_by_count=item.get("cited_by_count"),
-                fwci=item.get("fwci"),
-                citation_normalized_percentile=item.get("citation_normalized_percentile"),
-                primary_source_display_name=item.get("primary_source_display_name"),
-                primary_source_is_core=item.get("primary_source_is_core"),
-                counts_by_year=item.get("counts_by_year"),
-                institution_display_names=item.get("institution_display_names"),
             )
         )
     usage = {
-        "tavily_requests": int(data.get("tavily_requests") or 0),
         "pubmed_requests": int(data.get("pubmed_requests") or 0),
-        "openalex_requests": int(data.get("openalex_requests") or 0),
     }
     return results, usage

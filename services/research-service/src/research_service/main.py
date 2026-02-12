@@ -7,36 +7,28 @@ from typing import List
 from fastapi import FastAPI, HTTPException
 import redis.asyncio as redis
 
-from .openalex_client import OpenAlexClient
 from .pubmed_client import PubMedClient
 from .schemas import HealthResponse, ResearchRequest, ResearchResponse, ResearchSource
-from .tavily_client import TavilyClient
 from .vector_store import CacheStore
 
 
 app = FastAPI(title="Research Service", version="0.1.0")
 
 CACHE_TTL_SECONDS = int(os.getenv("RESEARCH_CACHE_TTL_SECONDS", "3600"))
-TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
-TAVILY_BASE_URL = os.getenv("TAVILY_BASE_URL", "https://api.tavily.com")
 PUBMED_BASE_URL = os.getenv("PUBMED_BASE_URL", "https://eutils.ncbi.nlm.nih.gov/entrez/eutils")
 PUBMED_API_KEY = os.getenv("PUBMED_API_KEY")
-OPENALEX_BASE_URL = os.getenv("OPENALEX_BASE_URL", "https://api.openalex.org")
-OPENALEX_API_KEY = os.getenv("OPENALEX_API_KEY")
 REDIS_URL = os.getenv("REDIS_URL")
 
 if not REDIS_URL:
     raise RuntimeError("REDIS_URL is required for distributed PubMed rate limiting")
 
 cache = CacheStore(ttl_seconds=CACHE_TTL_SECONDS)
-tavily_client = TavilyClient(api_key=TAVILY_API_KEY, base_url=TAVILY_BASE_URL)
 redis_client = redis.from_url(REDIS_URL)
 pubmed_client = PubMedClient(
     base_url=PUBMED_BASE_URL,
     api_key=PUBMED_API_KEY,
     redis_client=redis_client,
 )
-openalex_client = OpenAlexClient(api_key=OPENALEX_API_KEY, base_url=OPENALEX_BASE_URL)
 
 
 @app.on_event("shutdown")
@@ -58,6 +50,12 @@ async def health() -> HealthResponse:
 async def research(request: ResearchRequest) -> ResearchResponse:
     start = time.perf_counter()
     sources = [source.strip().lower() for source in request.sources]
+    unsupported = sorted({source for source in sources if source != "pubmed"})
+    if unsupported:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported research sources: {', '.join(unsupported)}",
+        )
     cache_key = f"{request.query}::{','.join(sorted(sources))}::{request.max_results}"
 
     cached = cache.get(cache_key)
@@ -68,25 +66,15 @@ async def research(request: ResearchRequest) -> ResearchResponse:
             results=cached.results,
             cached=True,
             took_ms=took_ms,
-            tavily_requests=cached.tavily_requests,
             pubmed_requests=cached.pubmed_requests,
-            openalex_requests=cached.openalex_requests,
         )
 
     results: List[ResearchSource] = []
-    tavily_requests = 0
     pubmed_requests = 0
-    openalex_requests = 0
     try:
-        if "tavily" in sources:
-            results.extend(await tavily_client.search(request.query, request.max_results))
-            tavily_requests = 1
         if "pubmed" in sources:
             results.extend(await pubmed_client.search(request.query, request.max_results))
             pubmed_requests = 1
-        if "openalex" in sources:
-            results.extend(await openalex_client.search(request.query, request.max_results))
-            openalex_requests = 1
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
@@ -99,9 +87,7 @@ async def research(request: ResearchRequest) -> ResearchResponse:
         results=results,
         cached=False,
         took_ms=took_ms,
-        tavily_requests=tavily_requests,
         pubmed_requests=pubmed_requests,
-        openalex_requests=openalex_requests,
     )
     cache.set(cache_key, response)
     return response

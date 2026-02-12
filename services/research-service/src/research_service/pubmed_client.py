@@ -126,7 +126,12 @@ class PubMedClient:
             "rettype": "abstract",
             "id": ",".join(ids),
         }
-        xml_text = await self._get_text("efetch.fcgi", params)
+        try:
+            xml_text = await self._get_text("efetch.fcgi", params)
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 404:
+                return {}
+            raise
         return _parse_abstracts_from_xml(xml_text)
 
     async def _get(self, path: str, params: dict[str, str]) -> dict:
