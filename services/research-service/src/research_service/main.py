@@ -56,7 +56,10 @@ async def research(request: ResearchRequest) -> ResearchResponse:
             status_code=400,
             detail=f"Unsupported research sources: {', '.join(unsupported)}",
         )
-    cache_key = f"{request.query}::{','.join(sorted(sources))}::{request.max_results}"
+    effective_query = request.query
+    if "pubmed" in sources:
+        effective_query = pubmed_client.build_query(request.query)
+    cache_key = f"{effective_query}::{','.join(sorted(sources))}::{request.max_results}"
 
     cached = cache.get(cache_key)
     if cached:
@@ -73,7 +76,7 @@ async def research(request: ResearchRequest) -> ResearchResponse:
     pubmed_requests = 0
     try:
         if "pubmed" in sources:
-            results.extend(await pubmed_client.search(request.query, request.max_results))
+            results.extend(await pubmed_client.search(effective_query, request.max_results))
             pubmed_requests = 1
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
