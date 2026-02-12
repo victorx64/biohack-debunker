@@ -42,16 +42,12 @@ def _api_request(method: str, path: str, payload: Dict[str, Any] | None = None) 
 
 
 def _get_query_params() -> Dict[str, Any]:
-    try:
-        return st.query_params
-    except AttributeError:
-        return dict(st.query_params)
+    return dict(st.query_params)
 
 
 def _set_query_params(**kwargs: str) -> None:
-    try:
-        st.experimental_set_query_params(**kwargs)
-    except AttributeError:
+    st.query_params.clear()
+    if kwargs:
         st.query_params.update(kwargs)
 
 
