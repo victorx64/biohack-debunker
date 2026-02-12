@@ -1,8 +1,8 @@
 services:
   api-gateway:
     build: ./services/api-gateway
-    ports:
-      - "8000:8000"
+    # ports:
+    #   - "8000:8000"
     env_file:
       - .env
     environment:
@@ -35,8 +35,8 @@ services:
 
   analysis-service:
     build: ./services/analysis-service
-    ports:
-      - "8002:8002"
+    # ports:
+    #   - "8002:8002"
     env_file:
       - .env
     environment:
@@ -58,8 +58,8 @@ services:
 
   research-service:
     build: ./services/research-service
-    ports:
-      - "8003:8003"
+    # ports:
+    #   - "8003:8003"
     env_file:
       - .env
     environment:
@@ -80,8 +80,8 @@ services:
 
   transcription-service:
     build: ./services/transcription-service
-    ports:
-      - "8001:8001"
+    # ports:
+    #   - "8001:8001"
     env_file:
       - .env
     environment:
@@ -92,13 +92,13 @@ services:
 
   qdrant:
     image: qdrant/qdrant:latest
-    ports:
-      - "6333:6333"
+    # ports:
+    #   - "6333:6333"
 
   postgres:
     image: postgres:16
-    ports:
-      - "5432:5432"
+    # ports:
+    #   - "5432:5432"
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-biohack_debunker}
       POSTGRES_USER: ${POSTGRES_USER:-app}
@@ -111,8 +111,8 @@ services:
 
   redis:
     image: redis:7
-    ports:
-      - "6379:6379"
+    # ports:
+    #   - "6379:6379"
 
   migrate:
     build:
