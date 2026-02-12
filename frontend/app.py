@@ -1,5 +1,6 @@
 import json
 import os
+from html import escape
 from typing import Any, Dict
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -59,9 +60,28 @@ def _verdict_emoji(verdict: str | None) -> str:
         return "✅"
     if normalized == "partially_supported":
         return "🟡"
-    if normalized in {"unsupported", "misleading"}:
+    if normalized == "misleading":
         return "❌"
     return "⚪"
+
+
+def _publication_type_chip(publication_type: str) -> str:
+    normalized = publication_type.strip().lower()
+    chip_styles = {
+        "meta-analysis": "background:#dcfce7;color:#166534;border:1px solid #86efac;",
+        "systematic review": "background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;",
+        "randomized controlled trial": "background:#fef9c3;color:#854d0e;border:1px solid #fde047;",
+        "clinical trial": "background:#ffedd5;color:#9a3412;border:1px solid #fdba74;",
+    }
+    style = chip_styles.get(
+        normalized,
+        "background:#e5e7eb;color:#374151;border:1px solid #d1d5db;",
+    )
+    label = escape(publication_type)
+    return (
+        f"<span style='display:inline-block;margin:0 6px 6px 0;padding:2px 8px;"
+        f"border-radius:9999px;font-size:12px;font-weight:600;{style}'>{label}</span>"
+    )
 
 
 st.title("Biohack Debunker")
@@ -143,10 +163,10 @@ if analysis_id:
                                 if isinstance(publication_type, str):
                                     publication_type = [publication_type]
                                 if publication_type:
-                                    tags = " ".join(
-                                        [f"`{pub_type}`" for pub_type in publication_type]
+                                    chips = "".join(
+                                        [_publication_type_chip(pub_type) for pub_type in publication_type]
                                     )
-                                    st.markdown(f"{tags}")
+                                    st.markdown(chips, unsafe_allow_html=True)
             else:
                 st.info("No claims available yet.")
 
