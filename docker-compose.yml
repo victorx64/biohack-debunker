@@ -129,3 +129,13 @@ services:
       postgres:
         condition: service_healthy
 
+  streamlit-frontend:
+    build: ./frontend
+    ports:
+      - "8501:8501"
+    environment:
+      API_BASE_URL: ${API_BASE_URL:-http://api-gateway:8000}
+      STREAMLIT_USER_EMAIL: ${STREAMLIT_USER_EMAIL:-streamlit@local}
+    depends_on:
+      - api-gateway
+
