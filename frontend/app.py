@@ -143,6 +143,14 @@ if analysis_id:
                                     st.markdown(f"- [{title}]({url})")
                                 else:
                                     st.markdown(f"- {title}")
+                                publication_type = source.get("publication_type") or []
+                                if isinstance(publication_type, str):
+                                    publication_type = [publication_type]
+                                if publication_type:
+                                    tags = " ".join(
+                                        [f"`{pub_type}`" for pub_type in publication_type]
+                                    )
+                                    st.markdown(f"{tags}")
             else:
                 st.info("No claims available yet.")
 
