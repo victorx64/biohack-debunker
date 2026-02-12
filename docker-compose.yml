@@ -70,6 +70,7 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       PUBMED_BASE_URL: ${PUBMED_BASE_URL:-https://eutils.ncbi.nlm.nih.gov/entrez/eutils}
       PUBMED_API_KEY: ${PUBMED_API_KEY:-}
+      PUBMED_MAX_RPS: ${PUBMED_MAX_RPS:-8}
       QDRANT_HOST: ${QDRANT_HOST:-qdrant}
       QDRANT_PORT: ${QDRANT_PORT:-6333}
       RESEARCH_SERVICE_PORT: ${RESEARCH_SERVICE_PORT:-8003}

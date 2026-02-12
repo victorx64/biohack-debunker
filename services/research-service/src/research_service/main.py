@@ -17,6 +17,7 @@ app = FastAPI(title="Research Service", version="0.1.0")
 CACHE_TTL_SECONDS = int(os.getenv("RESEARCH_CACHE_TTL_SECONDS", "3600"))
 PUBMED_BASE_URL = os.getenv("PUBMED_BASE_URL", "https://eutils.ncbi.nlm.nih.gov/entrez/eutils")
 PUBMED_API_KEY = os.getenv("PUBMED_API_KEY")
+PUBMED_MAX_RPS = int(os.getenv("PUBMED_MAX_RPS", "8"))
 REDIS_URL = os.getenv("REDIS_URL")
 
 if not REDIS_URL:
@@ -27,6 +28,7 @@ redis_client = redis.from_url(REDIS_URL)
 pubmed_client = PubMedClient(
     base_url=PUBMED_BASE_URL,
     api_key=PUBMED_API_KEY,
+    max_rps=PUBMED_MAX_RPS,
     redis_client=redis_client,
 )
 

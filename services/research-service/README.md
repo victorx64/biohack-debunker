@@ -14,6 +14,12 @@ results for faster repeat queries.
 - `GET /health` returns cache status.
 - `POST /research` searches research sources for a query.
 
+## Environment
+
+- `REDIS_URL` (required) — Redis connection for distributed PubMed rate limiting.
+- `PUBMED_API_KEY` (optional) — PubMed API key.
+- `PUBMED_MAX_RPS` (optional, default `8`) — max PubMed requests/sec shared across all instances.
+
 ## Example curls
 
 ```bash

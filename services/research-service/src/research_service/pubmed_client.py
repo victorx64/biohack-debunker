@@ -15,6 +15,8 @@ from .schemas import ResearchSource
 
 class _RateLimiter:
     def __init__(self, max_rps: int) -> None:
+        if max_rps <= 0:
+            raise ValueError("max_rps must be > 0")
         self._min_interval = 1.0 / max_rps
         self._lock = asyncio.Lock()
         self._next_time = 0.0
@@ -29,32 +31,48 @@ class _RateLimiter:
 
 
 class _RedisRateLimiter:
-    _INCR_EXPIRE_SCRIPT = """
-    local current = redis.call('INCR', KEYS[1])
-    if current == 1 then
-      redis.call('EXPIRE', KEYS[1], ARGV[1])
+    _RESERVE_SLOT_SCRIPT = """
+    local now_ms = tonumber(ARGV[1])
+    local interval_ms = tonumber(ARGV[2])
+    local ttl_ms = tonumber(ARGV[3])
+
+    local current = redis.call('GET', KEYS[1])
+    local next_allowed_ms = now_ms
+    if current then
+      local stored = tonumber(current)
+      if stored and stored > next_allowed_ms then
+        next_allowed_ms = stored
+      end
     end
-    return current
+
+    local scheduled_next_ms = next_allowed_ms + interval_ms
+    redis.call('PSETEX', KEYS[1], ttl_ms, tostring(scheduled_next_ms))
+    return next_allowed_ms
     """
 
     def __init__(self, client: redis.Redis, max_rps: int, key_prefix: str = "pubmed:rps") -> None:
+        if max_rps <= 0:
+            raise ValueError("max_rps must be > 0")
         self._client = client
         self._max_rps = max_rps
         self._key_prefix = key_prefix
-        self._ttl_seconds = 2
+        self._interval_ms = max(1, int(1000 / max_rps))
+        self._ttl_ms = max(2000, self._interval_ms * max_rps * 4)
 
     async def acquire(self) -> None:
-        while True:
-            now = time.time()
-            window = int(now)
-            key = f"{self._key_prefix}:{window}"
-            current = await self._client.eval(self._INCR_EXPIRE_SCRIPT, 1, key, self._ttl_seconds)
-            if int(current) <= self._max_rps:
-                return
-            sleep_for = (window + 1) - now
-            if sleep_for < 0.01:
-                sleep_for = 0.01
-            await asyncio.sleep(sleep_for)
+        now_ms = int(time.time() * 1000)
+        key = self._key_prefix
+        allowed_at_ms = await self._client.eval(
+            self._RESERVE_SLOT_SCRIPT,
+            1,
+            key,
+            now_ms,
+            self._interval_ms,
+            self._ttl_ms,
+        )
+        wait_ms = int(allowed_at_ms) - now_ms
+        if wait_ms > 0:
+            await asyncio.sleep(wait_ms / 1000)
 
 
 class PubMedClient:
