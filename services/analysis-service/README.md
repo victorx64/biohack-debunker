@@ -24,7 +24,13 @@ curl -s http://localhost:8002/health
 curl -s http://localhost:8002/analyze \
 	-H "Content-Type: application/json" \
 	-d '{
-		"transcript": "Creatine supplementation improves strength and power output in trained athletes when taken consistently.",
+		"segments": [
+			{
+				"start": 0.0,
+				"end": 8.0,
+				"text": "Omega-3 supplementation reduces triglycerides and may improve cardiovascular outcomes."
+			}
+		],
 		"claims_per_chunk": 3,
 		"research_max_results": 3,
 		"research_sources": ["pubmed"]
