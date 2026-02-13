@@ -33,17 +33,17 @@ async def generate_report(
 
 
 def _format_claims(claims: List[ClaimResult]) -> str:
-    return "\n".join(
-        json.dumps(
+    return json.dumps(
+        [
             {
                 "claim": claim.claim,
                 "verdict": claim.verdict,
                 "confidence": claim.confidence,
                 "explanation": claim.explanation,
-            },
-            ensure_ascii=True,
-        )
-        for claim in claims
+            }
+            for claim in claims
+        ],
+        ensure_ascii=False,
     )
 
 

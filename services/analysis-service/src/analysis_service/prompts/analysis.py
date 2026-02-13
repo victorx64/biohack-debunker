@@ -32,6 +32,8 @@ Claim:
 Evidence:
 {evidence}
 
+Evidence is provided as a JSON array of objects. Use only these items.
+
 Return ONLY valid JSON. Do not include markdown, code fences, or extra text.
 
 Return a JSON object with fields:
@@ -63,4 +65,6 @@ markdown, code fences, or extra text.
 
 Claims:
 {claims}
+
+Claims are provided as a JSON array of objects. Use only these items.
 """

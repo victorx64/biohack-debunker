@@ -68,19 +68,16 @@ def _format_evidence(sources: List[EvidenceSource]) -> str:
     items = []
     for source in sources:
         items.append(
-            json.dumps(
-                {
-                    "title": source.title,
-                    "url": source.url,
-                    "source_type": source.source_type,
-                    "publication_type": source.publication_type,
-                    "relevance_score": source.relevance_score,
-                    "snippet": source.snippet,
-                },
-                ensure_ascii=True,
-            )
+            {
+                "title": source.title,
+                "url": source.url,
+                "source_type": source.source_type,
+                "publication_type": source.publication_type,
+                "relevance_score": source.relevance_score,
+                "snippet": source.snippet,
+            }
         )
-    return "\n".join(items)
+    return json.dumps(items, ensure_ascii=False)
 
 
 def _coerce_analysis(data: object, sources: List[EvidenceSource]) -> ClaimAnalysis:
