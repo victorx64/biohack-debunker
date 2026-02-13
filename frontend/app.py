@@ -269,6 +269,30 @@ else:
         youtube_url = st.text_input("YouTube URL")
         submitted = st.form_submit_button("Run analysis")
 
+    if submitted:
+        if password != PASSWORD:
+            st.error("Invalid password.")
+        elif not youtube_url:
+            st.error("Please provide a YouTube URL.")
+        else:
+            try:
+                payload = {"youtube_url": youtube_url, "is_public": True, "force": True}
+                response = _api_request("POST", "/api/v1/analysis", payload)
+            except RuntimeError as exc:
+                st.error(str(exc))
+            else:
+                analysis_id = response.get("analysis_id")
+                poll_url = response.get("poll_url")
+                st.success("Analysis started.")
+                if analysis_id:
+                    st.markdown(
+                        f"Open the results page: [View analysis](?analysis_id={analysis_id})"
+                    )
+                # if poll_url:
+                #     st.caption(f"API status endpoint: {API_BASE_URL}{poll_url}")
+                if response.get("status") in {"pending", "processing"}:
+                    st.info("Processing is in progress. You can share the results link.")
+
     st.markdown("### Processed videos")
     try:
         feed_response = _api_request("GET", "/api/v1/feed?page=1&limit=10")
@@ -313,27 +337,3 @@ else:
                         st.write(overview)
 
                 st.markdown("---")
-
-    if submitted:
-        if password != PASSWORD:
-            st.error("Invalid password.")
-        elif not youtube_url:
-            st.error("Please provide a YouTube URL.")
-        else:
-            try:
-                payload = {"youtube_url": youtube_url, "is_public": True, "force": True}
-                response = _api_request("POST", "/api/v1/analysis", payload)
-            except RuntimeError as exc:
-                st.error(str(exc))
-            else:
-                analysis_id = response.get("analysis_id")
-                poll_url = response.get("poll_url")
-                st.success("Analysis started.")
-                if analysis_id:
-                    st.markdown(
-                        f"Open the results page: [View analysis](?analysis_id={analysis_id})"
-                    )
-                # if poll_url:
-                #     st.caption(f"API status endpoint: {API_BASE_URL}{poll_url}")
-                if response.get("status") in {"pending", "processing"}:
-                    st.info("Processing is in progress. You can share the results link.")
