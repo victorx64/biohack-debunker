@@ -55,21 +55,21 @@ def _set_query_params(**kwargs: str) -> None:
 
 def _verdict_emoji(verdict: str | None) -> str:
     if not verdict:
-        return "⚪"
+        return "❔"
     normalized = verdict.strip().lower()
     if normalized == "supported":
         return "✅"
     if normalized == "partially_supported":
         return "🟡"
     if normalized == "unsupported_by_evidence":
-        return "❌"
+        return "⭕️"
     if normalized == "no_evidence_found":
-        return "⚪"
+        return "❔"
     if normalized == "misleading":
         return "❌"
-    return "⚪"
+    return "❔"
 
-
+# 🔴❗️✅❗️❓🟢🟠⭕️🛑❔❕⁉️‼️❔
 def _verdict_label(verdict: str | None) -> str:
     if not verdict:
         return "Unknown"
