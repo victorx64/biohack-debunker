@@ -130,13 +130,10 @@ async def get_analysis_status(
                     id=claim.get("id"),
                     text=claim.get("claim_text"),
                     timestamp=format_timestamp(claim.get("timestamp_start")),
-                    category=claim.get("category"),
                     search_query=claim.get("search_query"),
                     verdict=claim.get("verdict"),
                     confidence=claim.get("confidence"),
                     explanation=claim.get("explanation"),
-                    evidence_level=claim.get("evidence_level"),
-                    study_type=claim.get("study_type"),
                     sources=sources_by_claim.get(claim.get("id"), []),
                     costs=ClaimCosts(
                         pubmed_requests=claim.get("pubmed_requests") or 0,

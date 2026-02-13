@@ -15,6 +15,13 @@ Each object in "claims" has fields:
 - specificity (vague | specific | quantified)
 - search_query (string, a PubMed search query based on the claim, following the rules below)
 
+Rules for claim text:
+- Each claim must be atomic: exactly one verifiable health assertion per claim.
+- Split compound statements connected by "and", "or", commas, or semicolons into separate claims when they contain different assertions.
+- Keep claim text short and literal (prefer 6-16 words; max 20 words).
+- Preserve original meaning; do not add hedging or extra details not present in transcript.
+- Keep medically relevant qualifiers only when essential (population, dose, timeframe, outcome).
+
 Rules for search_query:
 - Prioritize recall (finding enough relevant papers) over overly narrow precision.
 - Use 1-3 core concepts from the claim; do not force weak/generic concepts if they over-restrict results.

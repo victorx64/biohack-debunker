@@ -40,8 +40,6 @@ def _format_claims(claims: List[ClaimResult]) -> str:
                 "verdict": claim.verdict,
                 "confidence": claim.confidence,
                 "explanation": claim.explanation,
-                "evidence_level": claim.evidence_level,
-                "study_type": claim.study_type,
             },
             ensure_ascii=True,
         )

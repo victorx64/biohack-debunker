@@ -46,13 +46,10 @@ class ClaimInfo(BaseModel):
     id: UUID
     text: str
     timestamp: str | None = None
-    category: str | None = None
     search_query: str | None = None
     verdict: str | None = None
     confidence: float | None = None
     explanation: str | None = None
-    evidence_level: str | None = None
-    study_type: str | None = None
     sources: List[SourceInfo] = Field(default_factory=list)
     costs: "ClaimCosts" = Field(default_factory=lambda: ClaimCosts())
 

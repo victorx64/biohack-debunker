@@ -91,19 +91,11 @@ def _coerce_analysis(data: object, sources: List[EvidenceSource]) -> ClaimAnalys
     confidence = float(data.get("confidence") or 0.5)
     explanation = str(data.get("explanation") or "Insufficient evidence available.").strip()
     nuance = data.get("nuance")
-    evidence_level = _normalize_label(data.get("evidence_level"))
-    study_type = _normalize_label(data.get("study_type"))
-    if not evidence_level or not study_type:
-        inferred_level, inferred_type = _infer_evidence_classification(sources)
-        evidence_level = evidence_level or inferred_level
-        study_type = study_type or inferred_type
     analysis = ClaimAnalysis(
         verdict=verdict,
         confidence=max(0.0, min(confidence, 1.0)),
         explanation=explanation,
         nuance=str(nuance).strip() if nuance else None,
-        evidence_level=evidence_level,
-        study_type=study_type,
     )
     return _apply_evidence_policy(analysis, sources)
 
@@ -200,8 +192,6 @@ def _apply_evidence_policy(
     verdict = analysis.verdict
     confidence = analysis.confidence
     nuance = analysis.nuance
-    evidence_level = analysis.evidence_level or "very_low"
-    study_type = analysis.study_type or "unknown"
 
     if not sources and verdict != "no_evidence_found":
         verdict = "no_evidence_found"
@@ -210,28 +200,11 @@ def _apply_evidence_policy(
     if sources and verdict == "no_evidence_found":
         verdict = "unsupported_by_evidence"
 
-    if evidence_level in {"low", "very_low"}:
-        if verdict == "supported":
-            verdict = "partially_supported"
-        confidence = min(confidence, 0.55)
-
-    if study_type in {"animal", "in_vitro"} and not _has_human_evidence(sources):
-        if verdict in {"supported", "partially_supported"}:
-            verdict = "unsupported_by_evidence"
-        confidence = min(confidence, 0.4)
-        note = "Evidence is limited to non-human or in vitro studies; human efficacy is unproven."
-        if not nuance:
-            nuance = note
-        elif note not in nuance:
-            nuance = f"{nuance} {note}".strip()
-
     return ClaimAnalysis(
         verdict=verdict,
         confidence=max(0.0, min(confidence, 1.0)),
         explanation=analysis.explanation,
         nuance=nuance,
-        evidence_level=evidence_level,
-        study_type=study_type,
     )
 
 

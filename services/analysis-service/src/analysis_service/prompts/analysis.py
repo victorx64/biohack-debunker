@@ -2,17 +2,29 @@ CLAIM_ANALYSIS_PROMPT = """
 You are a medical research analyst. Evaluate the claim using the evidence.
 
 You must classify evidence quality and study type. Use the publication types
-and snippets to identify the strongest study design available. Weigh evidence
+and abstracts to identify the strongest study design available. Weigh evidence
 by quality: meta-analysis/systematic review/RCT > clinical trial > observational
 > case report > animal > in vitro. If evidence is only animal or in vitro, the
 verdict cannot be "supported" for human efficacy claims.
 
 Verdict policy:
-- Use "supported" only when the cited evidence directly supports the claim in humans.
-- Use "partially_supported" when evidence supports only part of the claim, or support is weak/indirect.
-- Use "unsupported_by_evidence" when studies are available but do not support the claim,
-  including overstated or causal claims not justified by the evidence.
+- Use "supported" when human evidence supports the claim, including:
+	- explicit statements in high-quality human sources (meta-analyses/systematic reviews/RCTs/guidelines), or
+	- consistent risk associations from strong human epidemiology for risk-factor claims (e.g., "X increases risk of Y").
+- For harmful-exposure claims (e.g., smoking causes/increases risk), do NOT require an RCT when unethical/impractical;
+	convergent human observational evidence and meta-analyses can be sufficient for "supported".
+- Use "partially_supported" when evidence is relevant but limited (specific subgroups, indirect outcomes, weak effect,
+	mixed findings, or only part of a compound claim is supported).
+- Use "unsupported_by_evidence" only when provided studies are mostly irrelevant, contradictory, or fail to support
+	the core claim despite being on-topic.
 - Use "no_evidence_found" only when no relevant publications are provided in Evidence.
+
+Relevance and interpretation rules:
+- Prioritize source relevance to the exact claim outcome over sheer source count.
+- If at least one high-quality, directly on-topic human source clearly supports the claim and there is no strong
+	contradictory evidence in the provided set, prefer "supported".
+- Do not downgrade to "partially_supported" solely because evidence is observational when this is the accepted
+	evidence base for the claim type.
 
 Claim:
 {claim}
@@ -27,9 +39,6 @@ Return a JSON object with fields:
 - confidence (0.0-1.0)
 - explanation (2-3 sentences)
 - nuance (string or null)
-- evidence_level (high | moderate | low | very_low)
-- study_type (meta_analysis | systematic_review | rct | clinical_trial |
-	observational | case_report | animal | in_vitro | unknown)
 """
 
 REPORT_PROMPT = """

@@ -105,7 +105,7 @@
       }
     ],
     "analysis_params": {
-      "claims_per_chunk": 1,
+      "claims_per_chunk": 2,
       "chunk_size_chars": 2000,
       "research_max_results": 25,
       "research_sources": ["pubmed"]
@@ -113,6 +113,20 @@
     "expected_claims": [
       {
         "claim": "Smoking causes lung cancer.",
+        "verdict": "supported",
+        "references": [
+          {
+            "title": "The Health Consequences of Smoking—50 Years of Progress",
+            "url": "https://pubmed.ncbi.nlm.nih.gov/24455788/"
+          },
+          {
+            "title": "WHO: Tobacco",
+            "url": "https://www.who.int/news-room/fact-sheets/detail/tobacco"
+          }
+        ]
+      },
+      {
+        "claim": "Smoking increases risk of cardiovascular disease.",
         "verdict": "supported",
         "references": [
           {

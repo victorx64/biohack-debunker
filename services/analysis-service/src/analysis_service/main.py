@@ -193,7 +193,6 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
         logger.info("analysis progress claim=%s/%s stage=done", index, len(claims))
         return ClaimResult(
             claim=claim.claim,
-            category=claim.category,
             timestamp=claim.timestamp,
             specificity=claim.specificity,
             search_query=claim.search_query,
@@ -201,8 +200,6 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
             confidence=analysis.confidence,
             explanation=analysis.explanation,
             nuance=analysis.nuance,
-            evidence_level=analysis.evidence_level,
-            study_type=analysis.study_type,
             sources=sources,
             costs=ClaimCosts(
                 pubmed_requests=research_usage.get("pubmed_requests", 0),
