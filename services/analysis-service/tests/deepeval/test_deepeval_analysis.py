@@ -8,20 +8,18 @@ from typing import Any
 import httpx
 import pytest
 from deepeval import assert_test
-from deepeval.metrics import FaithfulnessMetric, GEval
+from deepeval.metrics import FaithfulnessMetric
 from deepeval.test_case import LLMTestCase
-
-try:
-    from deepeval.test_case import LLMTestCaseParams
-except ImportError:  # Backward compatibility for older DeepEval versions.
-    class LLMTestCaseParams:  # type: ignore[no-redef]
-        INPUT = "input"
-        ACTUAL_OUTPUT = "actual_output"
-        EXPECTED_OUTPUT = "expected_output"
-        RETRIEVAL_CONTEXT = "retrieval_context"
 
 
 DEFAULT_DATASET_PATH = Path(__file__).with_name("fixtures").joinpath("analysis_dataset.json")
+ALLOWED_VERDICTS = {
+    "supported",
+    "partially_supported",
+    "unsupported_by_evidence",
+    "no_evidence_found",
+    "misleading",
+}
 
 
 def _load_dataset() -> list[dict[str, Any]]:
@@ -91,15 +89,33 @@ def _match_expected_claims(
 
 
 def _verdict_matches(expected: dict[str, Any], actual_verdict: str) -> bool:
-    actual_norm = _normalize_text(actual_verdict)
+    actual_norm = str(actual_verdict).strip().lower()
+    if actual_norm not in ALLOWED_VERDICTS:
+        raise AssertionError(
+            "actual verdict is not a supported enum value\n"
+            f"actual: {actual_verdict!r}\n"
+            f"allowed: {sorted(ALLOWED_VERDICTS)}"
+        )
+
     expected_any_of = expected.get("verdict_any_of")
     if expected_any_of:
-        expected_values = [str(item) for item in expected_any_of]
+        expected_values = [str(item).strip().lower() for item in expected_any_of]
     else:
-        expected_values = [str(expected.get("verdict") or "")]
-    expected_norms = {_normalize_text(value) for value in expected_values if value.strip()}
+        expected_values = [str(expected.get("verdict") or "").strip().lower()]
+
+    expected_norms = {value for value in expected_values if value}
     if not expected_norms:
         raise AssertionError("expected verdict is missing")
+
+    unknown_expected = expected_norms - ALLOWED_VERDICTS
+    if unknown_expected:
+        raise AssertionError(
+            "expected verdict contains unsupported enum value(s)\n"
+            f"expected: {sorted(expected_norms)}\n"
+            f"unknown: {sorted(unknown_expected)}\n"
+            f"allowed: {sorted(ALLOWED_VERDICTS)}"
+        )
+
     return actual_norm in expected_norms
 
 
@@ -133,27 +149,11 @@ def _build_metrics(model_name: str) -> list[Any]:
         # Ensure DeepEval/OpenAI client uses the same base URL from .env.
         os.environ["OPENAI_BASE_URL"] = base_url
         os.environ.setdefault("OPENAI_API_BASE", base_url)
-    verdict_metric = GEval(
-        name="Verdict match",
-        criteria="Determine whether the actual verdict matches the expected verdict.",
-        evaluation_steps=[
-            "Read the expected verdict.",
-            "Read the actual verdict.",
-            "Return a high score when they match in meaning.",
-        ],
-        evaluation_params=[
-            LLMTestCaseParams.EXPECTED_OUTPUT,
-            LLMTestCaseParams.ACTUAL_OUTPUT,
-        ],
-        threshold=float(os.getenv("DEEPEVAL_VERDICT_THRESHOLD", "0.8")),
-        model=model_name,
-    )
-
     faithfulness_metric = FaithfulnessMetric(
         threshold=float(os.getenv("DEEPEVAL_FAITHFULNESS_THRESHOLD", "0.5")),
         model=model_name,
     )
-    return [verdict_metric, faithfulness_metric]
+    return [faithfulness_metric]
 
 
 def _wait_for_service(base_url: str, timeout_seconds: float = 30.0) -> None:
