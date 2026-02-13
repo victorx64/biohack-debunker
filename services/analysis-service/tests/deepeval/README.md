@@ -23,7 +23,13 @@ File: services/analysis-service/tests/deepeval/fixtures/analysis_dataset.json
       {
         "claim": "...",
         "verdict": "supported",
-        "verdict_any_of": ["supported", "mostly supported"]
+        "verdict_any_of": ["supported", "partially_supported"],
+        "references": [
+          {
+            "title": "Source title",
+            "url": "https://..."
+          }
+        ]
       }
     ]
   }
@@ -33,6 +39,8 @@ File: services/analysis-service/tests/deepeval/fixtures/analysis_dataset.json
 Notes:
 - Use either `verdict` or `verdict_any_of` per claim.
 - `verdict_any_of` helps with minor label variations.
+- `references` is optional metadata for stakeholder traceability and is not used by test assertions.
+- Canonical verdicts: `supported`, `partially_supported`, `unsupported_by_evidence`, `no_evidence_found`, `misleading`.
 
 ## Environment variables
 
@@ -43,6 +51,9 @@ Notes:
 - `DEEPEVAL_FAITHFULNESS_THRESHOLD` (default: 0.5)
 - `DEEPEVAL_CLAIM_MATCH_THRESHOLD` (default: 0.6)
 - `DEEPEVAL_MAX_CLAIMS_PER_CASE` (default: 10)
+- `DEEPEVAL_MAX_CASES` (optional: run only first N dataset cases; useful for smoke runs)
+- `DEEPEVAL_CASE_IDS` (optional: comma-separated case IDs to run, e.g. `case-001,case-003`)
+- `DEEPEVAL_RESEARCH_MAX_RESULTS_OVERRIDE` (optional: force `research_max_results` for all cases)
 - `DEEPEVAL_OUTPUT_DIR` (optional: directory to save raw analysis-service responses)
 
 ## Docker compose
@@ -54,5 +65,12 @@ service and DeepEval.
 Run:
 
 ```bash
+docker compose -f docker-compose.yml -f docker-compose.deepeval.yml run --rm deepeval-analysis
+```
+
+Fast smoke run example:
+
+```bash
+DEEPEVAL_MAX_CASES=3 DEEPEVAL_RESEARCH_MAX_RESULTS_OVERRIDE=5 \
 docker compose -f docker-compose.yml -f docker-compose.deepeval.yml run --rm deepeval-analysis
 ```

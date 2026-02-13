@@ -17,7 +17,309 @@
     "expected_claims": [
       {
         "claim": "Omega-3 supplementation reduces triglycerides.",
-        "verdict": "supported"
+        "verdict": "supported",
+        "references": [
+          {
+            "title": "AHA Scientific Statement: Omega-3 Fatty Acids for the Management of Hypertriglyceridemia",
+            "url": "https://pubmed.ncbi.nlm.nih.gov/31422671/"
+          },
+          {
+            "title": "NIH ODS Fact Sheet: Omega-3 Fatty Acids",
+            "url": "https://ods.od.nih.gov/factsheets/Omega3FattyAcids-HealthProfessional/"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "case-002",
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 8.0,
+        "text": "Vaccines cause autism in children."
+      }
+    ],
+    "analysis_params": {
+      "claims_per_chunk": 1,
+      "chunk_size_chars": 2000,
+      "research_max_results": 25,
+      "research_sources": ["pubmed"]
+    },
+    "expected_claims": [
+      {
+        "claim": "Vaccines cause autism in children.",
+        "verdict": "unsupported_by_evidence",
+        "references": [
+          {
+            "title": "MMR vaccination and autism: nationwide cohort study",
+            "url": "https://pubmed.ncbi.nlm.nih.gov/30831578/"
+          },
+          {
+            "title": "CDC: Autism and Vaccines",
+            "url": "https://www.cdc.gov/vaccine-safety/about/autism.html"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "case-003",
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 8.0,
+        "text": "Antibiotics are effective treatments for common viral colds."
+      }
+    ],
+    "analysis_params": {
+      "claims_per_chunk": 1,
+      "chunk_size_chars": 2000,
+      "research_max_results": 25,
+      "research_sources": ["pubmed"]
+    },
+    "expected_claims": [
+      {
+        "claim": "Antibiotics are effective treatments for common viral colds.",
+        "verdict": "misleading",
+        "verdict_any_of": ["misleading", "unsupported_by_evidence"],
+        "references": [
+          {
+            "title": "CDC: Antibiotic Use and Antimicrobial Resistance Facts",
+            "url": "https://www.cdc.gov/antibiotic-use/data-research/facts-stats/index.html"
+          },
+          {
+            "title": "Antibiotics for the common cold and acute purulent rhinitis (Cochrane Review)",
+            "url": "https://pubmed.ncbi.nlm.nih.gov/23733381/"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "case-004",
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 8.0,
+        "text": "Smoking causes lung cancer and increases risk of cardiovascular disease."
+      }
+    ],
+    "analysis_params": {
+      "claims_per_chunk": 1,
+      "chunk_size_chars": 2000,
+      "research_max_results": 25,
+      "research_sources": ["pubmed"]
+    },
+    "expected_claims": [
+      {
+        "claim": "Smoking causes lung cancer.",
+        "verdict": "supported",
+        "references": [
+          {
+            "title": "The Health Consequences of Smoking—50 Years of Progress",
+            "url": "https://pubmed.ncbi.nlm.nih.gov/24455788/"
+          },
+          {
+            "title": "WHO: Tobacco",
+            "url": "https://www.who.int/news-room/fact-sheets/detail/tobacco"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "case-005",
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 8.0,
+        "text": "Vitamin C supplements prevent the common cold in the general population."
+      }
+    ],
+    "analysis_params": {
+      "claims_per_chunk": 1,
+      "chunk_size_chars": 2000,
+      "research_max_results": 25,
+      "research_sources": ["pubmed"]
+    },
+    "expected_claims": [
+      {
+        "claim": "Vitamin C supplements prevent the common cold in the general population.",
+        "verdict": "unsupported_by_evidence",
+        "verdict_any_of": ["unsupported_by_evidence", "partially_supported"],
+        "references": [
+          {
+            "title": "Vitamin C for preventing and treating the common cold (Cochrane Review)",
+            "url": "https://pubmed.ncbi.nlm.nih.gov/23440782/"
+          },
+          {
+            "title": "NIH ODS Fact Sheet: Vitamin C",
+            "url": "https://ods.od.nih.gov/factsheets/VitaminC-HealthProfessional/"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "case-006",
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 8.0,
+        "text": "Intermittent fasting can help with short-term weight loss in overweight adults."
+      }
+    ],
+    "analysis_params": {
+      "claims_per_chunk": 1,
+      "chunk_size_chars": 2000,
+      "research_max_results": 25,
+      "research_sources": ["pubmed"]
+    },
+    "expected_claims": [
+      {
+        "claim": "Intermittent fasting can help with short-term weight loss in overweight adults.",
+        "verdict": "partially_supported",
+        "references": [
+          {
+            "title": "Effects of Intermittent Fasting on Health, Aging, and Disease",
+            "url": "https://pubmed.ncbi.nlm.nih.gov/31813824/"
+          },
+          {
+            "title": "Time-restricted eating and weight loss trial",
+            "url": "https://pubmed.ncbi.nlm.nih.gov/33713356/"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "case-007",
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 8.0,
+        "text": "Melatonin reduces sleep-onset latency in adults with insomnia symptoms."
+      }
+    ],
+    "analysis_params": {
+      "claims_per_chunk": 1,
+      "chunk_size_chars": 2000,
+      "research_max_results": 25,
+      "research_sources": ["pubmed"]
+    },
+    "expected_claims": [
+      {
+        "claim": "Melatonin reduces sleep-onset latency in adults with insomnia symptoms.",
+        "verdict": "supported",
+        "references": [
+          {
+            "title": "Meta-analysis: efficacy of melatonin for primary sleep disorders",
+            "url": "https://pubmed.ncbi.nlm.nih.gov/20408925/"
+          },
+          {
+            "title": "European Insomnia Guideline (includes melatonin recommendations)",
+            "url": "https://pubmed.ncbi.nlm.nih.gov/25846534/"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "case-008",
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 8.0,
+        "text": "Red wine protects against heart disease regardless of alcohol dose."
+      }
+    ],
+    "analysis_params": {
+      "claims_per_chunk": 1,
+      "chunk_size_chars": 2000,
+      "research_max_results": 25,
+      "research_sources": ["pubmed"]
+    },
+    "expected_claims": [
+      {
+        "claim": "Red wine protects against heart disease regardless of alcohol dose.",
+        "verdict": "misleading",
+        "verdict_any_of": ["misleading", "unsupported_by_evidence"],
+        "references": [
+          {
+            "title": "WHO: No level of alcohol consumption is safe for health",
+            "url": "https://www.who.int/europe/news/item/04-01-2023-no-level-of-alcohol-consumption-is-safe-for-our-health"
+          },
+          {
+            "title": "Alcohol and cardiovascular health review",
+            "url": "https://pubmed.ncbi.nlm.nih.gov/33010236/"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "case-009",
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 8.0,
+        "text": "Detox teas remove toxins from the body more effectively than normal liver and kidney function."
+      }
+    ],
+    "analysis_params": {
+      "claims_per_chunk": 1,
+      "chunk_size_chars": 2000,
+      "research_max_results": 25,
+      "research_sources": ["pubmed"]
+    },
+    "expected_claims": [
+      {
+        "claim": "Detox teas remove toxins from the body more effectively than normal liver and kidney function.",
+        "verdict": "no_evidence_found",
+        "verdict_any_of": ["no_evidence_found", "unsupported_by_evidence"],
+        "references": [
+          {
+            "title": "NCCIH: Detoxes and Cleanses",
+            "url": "https://www.nccih.nih.gov/health/detoxes-and-cleanses-what-you-need-to-know"
+          },
+          {
+            "title": "British Dietetic Association: Detox diets",
+            "url": "https://www.bda.uk.com/resource/detox-diets.html"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "case-010",
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 8.0,
+        "text": "Lowering blood pressure reduces the risk of stroke in adults with hypertension."
+      }
+    ],
+    "analysis_params": {
+      "claims_per_chunk": 1,
+      "chunk_size_chars": 2000,
+      "research_max_results": 25,
+      "research_sources": ["pubmed"]
+    },
+    "expected_claims": [
+      {
+        "claim": "Lowering blood pressure reduces the risk of stroke in adults with hypertension.",
+        "verdict": "supported",
+        "references": [
+          {
+            "title": "Blood pressure lowering and major cardiovascular events meta-analysis",
+            "url": "https://pubmed.ncbi.nlm.nih.gov/26724178/"
+          },
+          {
+            "title": "WHO guideline for the pharmacological treatment of hypertension",
+            "url": "https://www.who.int/publications/i/item/9789240033986"
+          }
+        ]
       }
     ]
   }

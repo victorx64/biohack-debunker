@@ -33,6 +33,20 @@ def _load_dataset() -> list[dict[str, Any]]:
         raise AssertionError("dataset must be a JSON array")
     if not data:
         raise AssertionError("dataset is empty")
+    case_ids_raw = os.getenv("DEEPEVAL_CASE_IDS", "").strip()
+    if case_ids_raw:
+        wanted_ids = {item.strip() for item in case_ids_raw.split(",") if item.strip()}
+        data = [item for item in data if str(item.get("id") or "") in wanted_ids]
+        if not data:
+            raise AssertionError(
+                f"no dataset cases matched DEEPEVAL_CASE_IDS={case_ids_raw!r}"
+            )
+    max_cases_raw = os.getenv("DEEPEVAL_MAX_CASES", "").strip()
+    if max_cases_raw:
+        max_cases = int(max_cases_raw)
+        if max_cases < 1:
+            raise AssertionError("DEEPEVAL_MAX_CASES must be >= 1")
+        data = data[:max_cases]
     return data
 
 
@@ -185,11 +199,18 @@ def test_deepeval_analysis(case: dict[str, Any]) -> None:
         raise AssertionError("segments are required")
 
     analysis_params = case.get("analysis_params") or {}
+    research_max_results_override_raw = os.getenv(
+        "DEEPEVAL_RESEARCH_MAX_RESULTS_OVERRIDE", ""
+    ).strip()
+    research_max_results = analysis_params.get("research_max_results", 5)
+    if research_max_results_override_raw:
+        research_max_results = int(research_max_results_override_raw)
+
     payload = {
         "segments": segments,
         "claims_per_chunk": analysis_params.get("claims_per_chunk", 6),
         "chunk_size_chars": analysis_params.get("chunk_size_chars", 5000),
-        "research_max_results": analysis_params.get("research_max_results", 5),
+        "research_max_results": research_max_results,
         "research_sources": analysis_params.get("research_sources", ["pubmed"]),
     }
 
