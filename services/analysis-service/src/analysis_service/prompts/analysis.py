@@ -2,7 +2,7 @@ CLAIM_ANALYSIS_PROMPT = """
 You are a medical research analyst. Evaluate the claim using the evidence.
 
 You must classify evidence quality and study type. Use the publication types
-and abstracts to identify the strongest study design available. Weigh evidence
+and snippets to identify the strongest study design available. Weigh evidence
 by quality: meta-analysis/systematic review/RCT > clinical trial > observational
 > case report > animal > in vitro. If evidence is only animal or in vitro, the
 verdict cannot be "supported" for human efficacy claims.

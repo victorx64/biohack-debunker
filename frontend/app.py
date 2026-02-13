@@ -211,10 +211,6 @@ if analysis_id:
                             st.write(f"Verdict: {_verdict_label(verdict)} ({verdict})")
                         if claim.get("confidence") is not None:
                             st.write(f"Confidence: {claim.get('confidence')}")
-                        if claim.get("evidence_level"):
-                            st.write(f"Evidence level: {claim.get('evidence_level')}")
-                        if claim.get("study_type"):
-                            st.write(f"Study type: {claim.get('study_type')}")
                         if claim.get("search_query"):
                             st.write(f"Search query: {claim.get('search_query')}")
                         if claim.get("explanation"):

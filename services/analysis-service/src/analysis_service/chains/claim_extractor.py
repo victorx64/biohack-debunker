@@ -41,7 +41,6 @@ async def extract_claims(
             data = await llm.generate_json(
                 "Claim extraction",
                 payload,
-                openai_reasoning={"effort": "none"},
                 trace={"chunk": index, "chunks_total": len(chunks)},
             )
             return _coerce_claims(data)

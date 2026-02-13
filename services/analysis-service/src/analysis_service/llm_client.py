@@ -11,6 +11,7 @@ from typing import Any
 import httpx
 
 logger = logging.getLogger("analysis_service.llm")
+_LOG_PROMPT_MAX_CHARS = 3000
 
 
 class LLMClient:
@@ -49,7 +50,6 @@ class LLMClient:
         system_prompt: str,
         user_prompt: str,
         *,
-        openai_reasoning: dict[str, str] | None = None,
         trace: dict[str, Any] | None = None,
     ) -> Any:
         if not self.enabled:
@@ -58,7 +58,6 @@ class LLMClient:
             return await self._openai_json(
                 system_prompt,
                 user_prompt,
-                openai_reasoning,
                 trace,
                 return_usage=False,
             )
@@ -69,7 +68,6 @@ class LLMClient:
         system_prompt: str,
         user_prompt: str,
         *,
-        openai_reasoning: dict[str, str] | None = None,
         trace: dict[str, Any] | None = None,
     ) -> tuple[Any, "LLMUsage"]:
         if not self.enabled:
@@ -78,7 +76,6 @@ class LLMClient:
             return await self._openai_json(
                 system_prompt,
                 user_prompt,
-                openai_reasoning,
                 trace,
                 return_usage=True,
             )
@@ -88,7 +85,6 @@ class LLMClient:
         self,
         system_prompt: str,
         user_prompt: str,
-        openai_reasoning: dict[str, str] | None = None,
         trace: dict[str, Any] | None = None,
         return_usage: bool = False,
     ) -> Any | tuple[Any, "LLMUsage"]:
@@ -102,11 +98,23 @@ class LLMClient:
             ],
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
+            "reasoning": {
+                "effort": "none",
+                "enabled": False,
+            },
         }
         if self.response_format:
             payload["response_format"] = self.response_format
-        if openai_reasoning:
-            payload["reasoning"] = openai_reasoning
+
+        logger.info(
+            "openai request prompts provider=%s model=%s trace=%s system_prompt=%s user_prompt=%s",
+            self.provider,
+            self.model,
+            trace or {},
+            _truncate_for_log(system_prompt),
+            _truncate_for_log(user_prompt),
+        )
+
         for attempt in range(self.max_retries + 1):
             try:
                 timeout = httpx.Timeout(self.timeout, read=self.read_timeout)
@@ -252,3 +260,9 @@ async def _sleep_backoff(base_seconds: float, attempt: int) -> None:
 
 def _should_retry_status(status_code: int) -> bool:
     return status_code in {429, 500, 502, 503, 504}
+
+
+def _truncate_for_log(text: str, *, max_chars: int = _LOG_PROMPT_MAX_CHARS) -> str:
+    if len(text) <= max_chars:
+        return text
+    return f"{text[:max_chars]}... [truncated, total_chars={len(text)}]"
