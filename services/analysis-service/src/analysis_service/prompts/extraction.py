@@ -16,12 +16,21 @@ Each object in "claims" has fields:
 - search_query (string, a PubMed search query based on the claim, following the rules below)
 
 Rules for search_query:
-- Use 2-6 key terms from the claim.
+- Prioritize recall (finding enough relevant papers) over overly narrow precision.
+- Use 1-3 core concepts from the claim; do not force weak/generic concepts if they over-restrict results.
+- Use English terms only; if the claim is in another language, translate key terms to standard English medical terminology.
 - Put [tiab] after each term or quoted phrase.
-- Combine synonyms with OR and different concepts with AND.
-- Use quotes for multi-word phrases.
+- For each core concept, include 2-5 close synonyms/variants and join them with OR inside parentheses.
+- Use AND only between indispensable concepts.
+- Avoid generic constraint terms unless central to the claim (e.g., "time", "effect", "level", "change", "result").
+- For prevalence/frequency claims, include epidemiology wording when relevant (e.g., prevalence, frequency, proportion, rate, "experience sampling").
+- Always wrap OR groups in parentheses before combining with AND.
+- The search_query value must be a single-line valid JSON string.
+- To avoid JSON breakage, do NOT use double quotes inside search_query.
+- For multi-word concepts, use grouped word conjunction instead of phrase quotes, e.g. (mind[tiab] AND wandering[tiab]) instead of "mind wandering"[tiab].
 - Avoid extra words like "study" or "research".
 - Example: (omega-3[tiab] OR "fish oil"[tiab]) AND triglycerides[tiab]
+- Example (JSON-safe broad behavioral neuroscience claim): (((mind[tiab] AND wandering[tiab]) OR (task-unrelated[tiab] AND thought[tiab]) OR (stimulus-independent[tiab] AND thought[tiab]) OR (spontaneous[tiab] AND cognition[tiab]) OR daydreaming[tiab]) AND (prevalence[tiab] OR frequency[tiab] OR proportion[tiab] OR rate[tiab] OR (experience[tiab] AND sampling[tiab])))
 
 Valid response example (structure only):
 {{"claims":[{{"claim":"...","timestamp":"1:23","specificity":"specific","search_query":"..."}}]}}
