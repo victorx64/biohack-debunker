@@ -20,3 +20,5 @@ dist/
 # IDE
 .idea/
 .vscode/
+services/analysis-service/deepeval-outputs/
+
