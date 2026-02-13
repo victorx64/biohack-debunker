@@ -18,7 +18,6 @@ ALLOWED_VERDICTS = {
     "partially_supported",
     "unsupported_by_evidence",
     "no_evidence_found",
-    "misleading",
 }
 
 
@@ -39,12 +38,6 @@ def _load_dataset() -> list[dict[str, Any]]:
             raise AssertionError(
                 f"no dataset cases matched DEEPEVAL_CASE_IDS={case_ids_raw!r}"
             )
-    max_cases_raw = os.getenv("DEEPEVAL_MAX_CASES", "").strip()
-    if max_cases_raw:
-        max_cases = int(max_cases_raw)
-        if max_cases < 1:
-            raise AssertionError("DEEPEVAL_MAX_CASES must be >= 1")
-        data = data[:max_cases]
     return data
 
 

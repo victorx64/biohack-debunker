@@ -81,8 +81,7 @@
     "expected_claims": [
       {
         "claim": "Antibiotics are effective treatments for common viral colds.",
-        "verdict": "misleading",
-        "verdict_any_of": ["misleading", "unsupported_by_evidence"],
+        "verdict": "unsupported_by_evidence",
         "references": [
           {
             "title": "CDC: Antibiotic Use and Antimicrobial Resistance Facts",
@@ -243,8 +242,7 @@
     "expected_claims": [
       {
         "claim": "Red wine protects against heart disease regardless of alcohol dose.",
-        "verdict": "misleading",
-        "verdict_any_of": ["misleading", "unsupported_by_evidence"],
+        "verdict": "unsupported_by_evidence",
         "references": [
           {
             "title": "WHO: No level of alcohol consumption is safe for health",

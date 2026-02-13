@@ -61,11 +61,9 @@ def _verdict_emoji(verdict: str | None) -> str:
         return "✅"
     if normalized == "partially_supported":
         return "🟡"
-    if normalized == "unsupported_by_evidence":
-        return "⭕️"
     if normalized == "no_evidence_found":
-        return "❔"
-    if normalized == "misleading":
+        return "⭕️"
+    if normalized == "unsupported_by_evidence":
         return "❌"
     return "❔"
 
@@ -80,7 +78,6 @@ def _verdict_label(verdict: str | None) -> str:
         "unsupported": "Unsupported by evidence",
         "unsupported_by_evidence": "Unsupported by evidence",
         "no_evidence_found": "No evidence found",
-        "misleading": "Misleading",
     }
     return labels.get(normalized, "Unknown")
 
@@ -188,7 +185,6 @@ if analysis_id:
                     ("partially_supported", "Partially supported"),
                     ("unsupported_by_evidence", "Unsupported by evidence"),
                     ("no_evidence_found", "No evidence found"),
-                    ("misleading", "Misleading"),
                     (None, "Unknown"),
                 ]
                 for verdict_key, verdict_name in verdict_order:

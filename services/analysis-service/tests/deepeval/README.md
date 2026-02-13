@@ -40,7 +40,7 @@ Notes:
 - Use either `verdict` or `verdict_any_of` per claim.
 - `verdict_any_of` helps with minor label variations.
 - `references` is optional metadata for stakeholder traceability and is not used by test assertions.
-- Canonical verdicts: `supported`, `partially_supported`, `unsupported_by_evidence`, `no_evidence_found`, `misleading`.
+- Canonical verdicts: `supported`, `partially_supported`, `unsupported_by_evidence`, `no_evidence_found`.
 
 ## Environment variables
 
@@ -51,10 +51,9 @@ Notes:
 - `DEEPEVAL_FAITHFULNESS_THRESHOLD` (default: 0.5)
 - `DEEPEVAL_CLAIM_MATCH_THRESHOLD` (default: 0.6)
 - `DEEPEVAL_MAX_CLAIMS_PER_CASE` (default: 10)
-- `DEEPEVAL_MAX_CASES` (optional: run only first N dataset cases; useful for smoke runs)
 - `DEEPEVAL_CASE_IDS` (optional: comma-separated case IDs to run, e.g. `case-001,case-003`)
 - `DEEPEVAL_RESEARCH_MAX_RESULTS_OVERRIDE` (optional: force `research_max_results` for all cases)
-- `DEEPEVAL_OUTPUT_DIR` (optional: directory to save raw analysis-service responses)
+- `DEEPEVAL_OUTPUT_DIR` (optional but recommended: directory to save raw analysis-service responses for debugging)
 
 ## Docker compose
 
@@ -68,9 +67,36 @@ Run:
 docker compose -f docker-compose.yml -f docker-compose.deepeval.yml run --rm deepeval-analysis
 ```
 
+Run a single case:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.deepeval.yml run --rm \
+  -e DEEPEVAL_CASE_IDS=case-002 \
+  deepeval-analysis
+```
+
+Run a single case and always save raw responses (recommended for debugging):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.deepeval.yml run --rm \
+  -e DEEPEVAL_CASE_IDS=case-002 \
+  -e DEEPEVAL_OUTPUT_DIR=/app/services/analysis-service/deepeval-outputs \
+  deepeval-analysis
+```
+
+After the run, inspect saved JSON files in `services/analysis-service/deepeval-outputs/`.
+
+You can pass multiple case IDs as a comma-separated list:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.deepeval.yml run --rm \
+  -e DEEPEVAL_CASE_IDS=case-001,case-003 \
+  deepeval-analysis
+```
+
 Fast smoke run example:
 
 ```bash
-DEEPEVAL_MAX_CASES=3 DEEPEVAL_RESEARCH_MAX_RESULTS_OVERRIDE=5 \
+DEEPEVAL_CASE_IDS=case-001 DEEPEVAL_RESEARCH_MAX_RESULTS_OVERRIDE=5 \
 docker compose -f docker-compose.yml -f docker-compose.deepeval.yml run --rm deepeval-analysis
 ```

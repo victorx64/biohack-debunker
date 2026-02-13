@@ -441,7 +441,7 @@ Evidence:
 Return ONLY valid JSON. Do not include markdown, code fences, or extra text.
 
 Return a JSON object with fields:
-- verdict (supported | partially_supported | unsupported | misleading)
+- verdict (supported | partially_supported | unsupported_by_evidence | no_evidence_found)
 - confidence (0.0-1.0)
 - explanation (2-3 sentences)
 - nuance (string or null)
@@ -454,7 +454,7 @@ REPORT_PROMPT = """
 You are summarizing a set of analyzed health claims for a report.
 Provide:
 - summary: 2-3 sentences overview
-- overall_rating: accurate | mostly_accurate | mixed | misleading
+- overall_rating: accurate | mostly_accurate | mixed
 
 Return ONLY valid JSON with keys "summary" and "overall_rating". Do not include
 markdown, code fences, or extra text.

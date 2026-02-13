@@ -22,7 +22,6 @@ def _normalize_verdict(value: object, has_sources: bool) -> str:
         "partially_supported": "partially_supported",
         "partial_support": "partially_supported",
         "partly_supported": "partially_supported",
-        "misleading": "misleading",
         "unsupported": "unsupported_by_evidence",
         "not_supported": "unsupported_by_evidence",
         "insufficient_evidence": "unsupported_by_evidence",
