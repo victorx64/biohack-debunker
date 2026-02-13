@@ -61,8 +61,10 @@ def _verdict_emoji(verdict: str | None) -> str:
         return "✅"
     if normalized == "partially_supported":
         return "🟡"
-    if normalized == "unsupported":
-        return "❓"
+    if normalized == "unsupported_by_evidence":
+        return "❌"
+    if normalized == "no_evidence_found":
+        return "⚪"
     if normalized == "misleading":
         return "❌"
     return "⚪"
@@ -75,7 +77,9 @@ def _verdict_label(verdict: str | None) -> str:
     labels = {
         "supported": "Supported",
         "partially_supported": "Partially supported",
-        "unsupported": "Unsupported",
+        "unsupported": "Unsupported by evidence",
+        "unsupported_by_evidence": "Unsupported by evidence",
+        "no_evidence_found": "No evidence found",
         "misleading": "Misleading",
     }
     return labels.get(normalized, "Unknown")
@@ -182,7 +186,8 @@ if analysis_id:
                 verdict_order = [
                     ("supported", "Supported"),
                     ("partially_supported", "Partially supported"),
-                    ("unsupported", "Unsupported"),
+                    ("unsupported_by_evidence", "Unsupported by evidence"),
+                    ("no_evidence_found", "No evidence found"),
                     ("misleading", "Misleading"),
                     (None, "Unknown"),
                 ]
@@ -207,13 +212,15 @@ if analysis_id:
                             else:
                                 st.caption(f"Timestamp: {timestamp}")
                         if verdict:
-                            st.write(f"Verdict: {verdict}")
+                            st.write(f"Verdict: {_verdict_label(verdict)} ({verdict})")
                         if claim.get("confidence") is not None:
                             st.write(f"Confidence: {claim.get('confidence')}")
                         if claim.get("evidence_level"):
                             st.write(f"Evidence level: {claim.get('evidence_level')}")
                         if claim.get("study_type"):
                             st.write(f"Study type: {claim.get('study_type')}")
+                        if claim.get("search_query"):
+                            st.write(f"Search query: {claim.get('search_query')}")
                         if claim.get("explanation"):
                             st.write(claim.get("explanation"))
                         sources = claim.get("sources") or []
@@ -261,6 +268,51 @@ else:
         password = st.text_input("Password", type="password")
         youtube_url = st.text_input("YouTube URL")
         submitted = st.form_submit_button("Run analysis")
+
+    st.markdown("### Processed videos")
+    try:
+        feed_response = _api_request("GET", "/api/v1/feed?page=1&limit=10")
+    except RuntimeError:
+        st.caption("Public feed is temporarily unavailable.")
+    else:
+        feed_items = feed_response.get("items") or []
+        if not feed_items:
+            st.caption("No processed public videos yet.")
+        else:
+            for item in feed_items:
+                video_info = item.get("video") or {}
+                item_id = item.get("id")
+                title = video_info.get("title") or "Video analysis"
+                summary = item.get("summary")
+                overview = summary.strip() if isinstance(summary, str) else ""
+                if len(overview) > 220:
+                    overview = f"{overview[:220].rstrip()}..."
+
+                left_col, right_col = st.columns([1, 3])
+                with left_col:
+                    thumbnail_url = video_info.get("thumbnail_url")
+                    if thumbnail_url:
+                        st.image(thumbnail_url, use_column_width=True)
+                with right_col:
+                    if item_id:
+                        st.markdown(f"**[{title}](?analysis_id={item_id})**")
+                    else:
+                        st.markdown(f"**{title}**")
+
+                    details = []
+                    if video_info.get("channel"):
+                        details.append(f"Channel: {video_info.get('channel')}")
+                    if video_info.get("duration"):
+                        details.append(f"Duration: {video_info.get('duration')} sec")
+                    if item.get("overall_rating"):
+                        details.append(f"Rating: {item.get('overall_rating')}")
+                    if details:
+                        st.caption(" • ".join(details))
+
+                    if overview:
+                        st.write(overview)
+
+                st.markdown("---")
 
     if submitted:
         if password != PASSWORD:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import List
 
 import httpx
@@ -11,6 +12,31 @@ from ..prompts.analysis import CLAIM_ANALYSIS_PROMPT
 from ..schemas import ClaimAnalysis, EvidenceSource
 
 logger = logging.getLogger("analysis_service.claim_analyzer")
+
+
+def _normalize_verdict(value: object, has_sources: bool) -> str:
+    raw = str(value or "").strip().lower()
+    normalized = re.sub(r"[\s-]+", "_", raw)
+    aliases = {
+        "supported": "supported",
+        "partially_supported": "partially_supported",
+        "partial_support": "partially_supported",
+        "partly_supported": "partially_supported",
+        "misleading": "misleading",
+        "unsupported": "unsupported_by_evidence",
+        "not_supported": "unsupported_by_evidence",
+        "insufficient_evidence": "unsupported_by_evidence",
+        "unsupported_by_evidence": "unsupported_by_evidence",
+        "no_evidence": "no_evidence_found",
+        "no_evidence_found": "no_evidence_found",
+        "no_supporting_evidence": "no_evidence_found",
+    }
+    mapped = aliases.get(normalized)
+    if mapped:
+        if mapped == "unsupported_by_evidence" and not has_sources:
+            return "no_evidence_found"
+        return mapped
+    return "unsupported_by_evidence" if has_sources else "no_evidence_found"
 
 
 async def analyze_claim(
@@ -62,7 +88,7 @@ def _format_evidence(sources: List[EvidenceSource]) -> str:
 def _coerce_analysis(data: object, sources: List[EvidenceSource]) -> ClaimAnalysis:
     if not isinstance(data, dict):
         raise RuntimeError("LLM response missing analysis fields")
-    verdict = str(data.get("verdict") or "unsupported").strip()
+    verdict = _normalize_verdict(data.get("verdict"), has_sources=bool(sources))
     confidence = float(data.get("confidence") or 0.5)
     explanation = str(data.get("explanation") or "Insufficient evidence available.").strip()
     nuance = data.get("nuance")
@@ -178,9 +204,12 @@ def _apply_evidence_policy(
     evidence_level = analysis.evidence_level or "very_low"
     study_type = analysis.study_type or "unknown"
 
-    if not sources and verdict != "unsupported":
-        verdict = "unsupported"
+    if not sources and verdict != "no_evidence_found":
+        verdict = "no_evidence_found"
         confidence = min(confidence, 0.2)
+
+    if sources and verdict == "no_evidence_found":
+        verdict = "unsupported_by_evidence"
 
     if evidence_level in {"low", "very_low"}:
         if verdict == "supported":
@@ -189,7 +218,7 @@ def _apply_evidence_policy(
 
     if study_type in {"animal", "in_vitro"} and not _has_human_evidence(sources):
         if verdict in {"supported", "partially_supported"}:
-            verdict = "unsupported"
+            verdict = "unsupported_by_evidence"
         confidence = min(confidence, 0.4)
         note = "Evidence is limited to non-human or in vitro studies; human efficacy is unproven."
         if not nuance:
