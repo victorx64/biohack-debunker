@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import time
 from typing import List
@@ -13,6 +14,7 @@ from .vector_store import CacheStore
 
 
 app = FastAPI(title="Research Service", version="0.1.0")
+logger = logging.getLogger(__name__)
 
 CACHE_TTL_SECONDS = int(os.getenv("RESEARCH_CACHE_TTL_SECONDS", "3600"))
 PUBMED_BASE_URL = os.getenv("PUBMED_BASE_URL", "https://eutils.ncbi.nlm.nih.gov/entrez/eutils")
@@ -81,6 +83,14 @@ async def research(request: ResearchRequest) -> ResearchResponse:
             results.extend(await pubmed_client.search(effective_query, request.max_results))
             pubmed_requests = 1
     except Exception as exc:
+        logger.exception(
+            "Research request failed: query=%r sources=%s max_results=%s error_type=%s error=%s",
+            request.query,
+            sources,
+            request.max_results,
+            type(exc).__name__,
+            str(exc),
+        )
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     results.sort(key=lambda item: item.relevance_score, reverse=True)

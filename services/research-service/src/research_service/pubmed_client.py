@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import re
 import time
 import xml.etree.ElementTree as ET
@@ -11,6 +12,9 @@ import httpx
 import redis.asyncio as redis
 
 from .schemas import ResearchSource
+
+
+logger = logging.getLogger(__name__)
 
 
 class _RateLimiter:
@@ -177,9 +181,38 @@ class PubMedClient:
 
         await self._rate_limiter.acquire()
         async with httpx.AsyncClient(timeout=20) as client:
-            response = await client.get(f"{self._base_url}/{path}", params=request_params)
-            response.raise_for_status()
-            return response.json()
+            try:
+                response = await client.get(f"{self._base_url}/{path}", params=request_params)
+                response.raise_for_status()
+                return response.json()
+            except httpx.HTTPStatusError as exc:
+                retry_after = exc.response.headers.get("Retry-After")
+                logger.warning(
+                    "PubMed HTTP error path=%s status=%s retry_after=%s term=%r body=%r",
+                    path,
+                    exc.response.status_code,
+                    retry_after,
+                    request_params.get("term"),
+                    _truncate(exc.response.text),
+                )
+                raise
+            except httpx.TimeoutException as exc:
+                logger.warning(
+                    "PubMed timeout path=%s term=%r error=%s",
+                    path,
+                    request_params.get("term"),
+                    str(exc),
+                )
+                raise
+            except httpx.RequestError as exc:
+                logger.warning(
+                    "PubMed request error path=%s term=%r error_type=%s error=%s",
+                    path,
+                    request_params.get("term"),
+                    type(exc).__name__,
+                    str(exc),
+                )
+                raise
 
     async def _get_text(self, path: str, params: dict[str, str]) -> str:
         request_params = dict(params)
@@ -188,9 +221,44 @@ class PubMedClient:
 
         await self._rate_limiter.acquire()
         async with httpx.AsyncClient(timeout=20) as client:
-            response = await client.get(f"{self._base_url}/{path}", params=request_params)
-            response.raise_for_status()
-            return response.text
+            try:
+                response = await client.get(f"{self._base_url}/{path}", params=request_params)
+                response.raise_for_status()
+                return response.text
+            except httpx.HTTPStatusError as exc:
+                retry_after = exc.response.headers.get("Retry-After")
+                logger.warning(
+                    "PubMed HTTP error path=%s status=%s retry_after=%s ids=%r body=%r",
+                    path,
+                    exc.response.status_code,
+                    retry_after,
+                    request_params.get("id"),
+                    _truncate(exc.response.text),
+                )
+                raise
+            except httpx.TimeoutException as exc:
+                logger.warning(
+                    "PubMed timeout path=%s ids=%r error=%s",
+                    path,
+                    request_params.get("id"),
+                    str(exc),
+                )
+                raise
+            except httpx.RequestError as exc:
+                logger.warning(
+                    "PubMed request error path=%s ids=%r error_type=%s error=%s",
+                    path,
+                    request_params.get("id"),
+                    type(exc).__name__,
+                    str(exc),
+                )
+                raise
+
+
+def _truncate(value: str, limit: int = 500) -> str:
+    if len(value) <= limit:
+        return value
+    return f"{value[:limit]}...<truncated>"
 
 
 def _parse_pubdate(value: str | None) -> date | None:
