@@ -59,8 +59,6 @@ def _verdict_emoji(verdict: str | None) -> str:
     normalized = verdict.strip().lower()
     if normalized == "supported":
         return "✅"
-    if normalized == "partially_supported":
-        return "🟡"
     if normalized == "no_evidence_found":
         return "⭕️"
     if normalized == "unsupported_by_evidence":
@@ -74,7 +72,6 @@ def _verdict_label(verdict: str | None) -> str:
     normalized = verdict.strip().lower()
     labels = {
         "supported": "Supported",
-        "partially_supported": "Partially supported",
         "unsupported": "Unsupported by evidence",
         "unsupported_by_evidence": "Unsupported by evidence",
         "no_evidence_found": "No evidence found",
@@ -182,7 +179,6 @@ if analysis_id:
                 st.write(f"Total claims: {len(claims)}")
                 verdict_order = [
                     ("supported", "Supported"),
-                    ("partially_supported", "Partially supported"),
                     ("unsupported_by_evidence", "Unsupported by evidence"),
                     ("no_evidence_found", "No evidence found"),
                     (None, "Unknown"),

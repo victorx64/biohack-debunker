@@ -23,7 +23,7 @@ def _pubmed_summary(ids: List[str]) -> Dict[str, Any]:
         }
     return result
 
-
+# This function is broken
 def _openai_response(system_prompt: str) -> str:
     if "Claim extraction" in system_prompt:
         return json.dumps(
@@ -39,7 +39,7 @@ def _openai_response(system_prompt: str) -> str:
     if "Claim analysis" in system_prompt:
         return json.dumps(
             {
-                "verdict": "partially_supported",
+                "verdict": "no_evidence_found",
                 "confidence": 0.62,
                 "explanation": "Mock evidence suggests a possible benefit.",
                 "nuance": "Mock response for tests.",

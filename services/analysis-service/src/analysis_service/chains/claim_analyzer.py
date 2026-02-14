@@ -19,9 +19,6 @@ def _normalize_verdict(value: object, has_sources: bool) -> str:
     normalized = re.sub(r"[\s-]+", "_", raw)
     aliases = {
         "supported": "supported",
-        "partially_supported": "partially_supported",
-        "partial_support": "partially_supported",
-        "partly_supported": "partially_supported",
         "unsupported": "unsupported_by_evidence",
         "not_supported": "unsupported_by_evidence",
         "insufficient_evidence": "unsupported_by_evidence",

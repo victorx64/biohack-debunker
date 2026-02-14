@@ -320,7 +320,7 @@ Response 200 (completed):
       "text": "Vitamin D supplementation prevents all cancers",
       "timestamp": "2:34",
       "category": "supplements",
-      "verdict": "partially_supported",
+      "verdict": "unsupported_by_evidence",
       "confidence": 0.85,
       "explanation": "While vitamin D has shown some protective effects...",
       "sources": [
@@ -441,7 +441,7 @@ Evidence:
 Return ONLY valid JSON. Do not include markdown, code fences, or extra text.
 
 Return a JSON object with fields:
-- verdict (supported | partially_supported | unsupported_by_evidence | no_evidence_found)
+- verdict (supported | unsupported_by_evidence | no_evidence_found)
 - confidence (0.0-1.0)
 - explanation (2-3 sentences)
 - nuance (string or null)

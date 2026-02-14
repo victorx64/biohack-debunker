@@ -17,7 +17,6 @@
     {
       "claim": "Vitamin C supplements prevent the common cold in the general population.",
       "verdict": "unsupported_by_evidence",
-      "verdict_any_of": ["unsupported_by_evidence", "partially_supported"],
       "references": [
         {
           "title": "Vitamin C for preventing and treating the common cold (Cochrane Review)",

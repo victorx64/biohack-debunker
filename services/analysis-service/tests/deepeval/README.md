@@ -23,7 +23,7 @@ File: services/analysis-service/tests/deepeval/fixtures/analysis_dataset.json
       {
         "claim": "...",
         "verdict": "supported",
-        "verdict_any_of": ["supported", "partially_supported"],
+        "verdict_any_of": ["supported", "no_evidence_found"],
         "references": [
           {
             "title": "Source title",
@@ -40,7 +40,7 @@ Notes:
 - Use either `verdict` or `verdict_any_of` per claim.
 - `verdict_any_of` helps with minor label variations.
 - `references` is optional metadata for stakeholder traceability and is not used by test assertions.
-- Canonical verdicts: `supported`, `partially_supported`, `unsupported_by_evidence`, `no_evidence_found`.
+- Canonical verdicts: `supported`, `unsupported_by_evidence`, `no_evidence_found`.
 
 ## Environment variables
 
@@ -80,11 +80,11 @@ Run a single case and always save raw responses (recommended for debugging):
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.deepeval.yml run --rm \
   -e DEEPEVAL_CASE_IDS=case-002 \
-  -e DEEPEVAL_OUTPUT_DIR=/app/services/analysis-service/deepeval-outputs \
+  -e DEEPEVAL_OUTPUT_DIR=/app/services/analysis-service/tests/deepeval/outputs \
   deepeval-analysis
 ```
 
-After the run, inspect saved JSON files in `services/analysis-service/deepeval-outputs/`.
+After the run, inspect saved JSON files in `services/analysis-service/tests/deepeval/outputs/`.
 
 You can pass multiple case IDs as a comma-separated list:
 
