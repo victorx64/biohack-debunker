@@ -1,0 +1,32 @@
+{
+  "id": "case-010",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 8.0,
+      "text": "Lowering blood pressure reduces the risk of stroke in adults with hypertension."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Lowering blood pressure reduces the risk of stroke in adults with hypertension.",
+      "verdict": "supported",
+      "references": [
+        {
+          "title": "Blood pressure lowering and major cardiovascular events meta-analysis",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/26724178/"
+        },
+        {
+          "title": "WHO guideline for the pharmacological treatment of hypertension",
+          "url": "https://www.who.int/publications/i/item/9789240033986"
+        }
+      ]
+    }
+  ]
+}

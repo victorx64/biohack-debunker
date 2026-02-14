@@ -12,7 +12,7 @@ from deepeval.metrics import FaithfulnessMetric
 from deepeval.test_case import LLMTestCase
 
 
-DEFAULT_DATASET_PATH = Path(__file__).with_name("fixtures").joinpath("analysis_dataset.json")
+DEFAULT_DATASET_SOURCE = Path(__file__).with_name("fixtures")
 ALLOWED_VERDICTS = {
     "supported",
     "partially_supported",
@@ -22,12 +22,39 @@ ALLOWED_VERDICTS = {
 
 
 def _load_dataset() -> list[dict[str, Any]]:
-    dataset_path = Path(os.getenv("DEEPEVAL_DATASET_PATH", str(DEFAULT_DATASET_PATH)))
-    if not dataset_path.exists():
-        raise AssertionError(f"dataset not found: {dataset_path}")
-    data = json.loads(dataset_path.read_text(encoding="utf-8"))
-    if not isinstance(data, list):
-        raise AssertionError("dataset must be a JSON array")
+    dataset_source = Path(
+        os.getenv("DEEPEVAL_DATASET_PATH", str(DEFAULT_DATASET_SOURCE))
+    )
+    if not dataset_source.exists():
+        raise AssertionError(f"dataset not found: {dataset_source}")
+
+    if dataset_source.is_dir():
+        case_files = sorted(
+            path for path in dataset_source.glob("case-*.json") if path.is_file()
+        )
+        if not case_files:
+            raise AssertionError(
+                f"no case files found in dataset directory: {dataset_source}"
+            )
+        data: list[dict[str, Any]] = []
+        for case_file in case_files:
+            case_data = json.loads(case_file.read_text(encoding="utf-8"))
+            if not isinstance(case_data, dict):
+                raise AssertionError(
+                    f"dataset case file must be a JSON object: {case_file}"
+                )
+            data.append(case_data)
+    else:
+        file_data = json.loads(dataset_source.read_text(encoding="utf-8"))
+        if isinstance(file_data, list):
+            data = file_data
+        elif isinstance(file_data, dict):
+            data = [file_data]
+        else:
+            raise AssertionError(
+                "dataset file must be a JSON object or array of objects"
+            )
+
     if not data:
         raise AssertionError("dataset is empty")
     case_ids_raw = os.getenv("DEEPEVAL_CASE_IDS", "").strip()

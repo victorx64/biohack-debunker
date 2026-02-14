@@ -21,7 +21,6 @@ class TranscriptSegment(BaseModel):
 
 class ClaimDraft(BaseModel):
     claim: str
-    category: str | None = None
     timestamp: str | None = None
     specificity: str | None = None
     search_query: str | None = None
@@ -45,7 +44,6 @@ class ClaimAnalysis(BaseModel):
 
 class ClaimResult(BaseModel):
     claim: str
-    category: str | None = None
     timestamp: str | None = None
     specificity: str | None = None
     search_query: str | None = None

@@ -1,0 +1,32 @@
+{
+  "id": "case-006",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 8.0,
+      "text": "Intermittent fasting can help with short-term weight loss in overweight adults."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Intermittent fasting can help with short-term weight loss in overweight adults.",
+      "verdict": "partially_supported",
+      "references": [
+        {
+          "title": "Effects of Intermittent Fasting on Health, Aging, and Disease",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/31813824/"
+        },
+        {
+          "title": "Time-restricted eating and weight loss trial",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33713356/"
+        }
+      ]
+    }
+  ]
+}

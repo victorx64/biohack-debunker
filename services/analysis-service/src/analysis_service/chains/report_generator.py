@@ -5,7 +5,7 @@ import logging
 from typing import List
 
 from ..llm_client import LLMClient, LLMUsage
-from ..prompts.analysis import REPORT_PROMPT
+from ..prompts.report import REPORT_SYSTEM_PROMPT, REPORT_USER_PROMPT
 from ..schemas import ClaimResult
 
 logger = logging.getLogger("analysis_service.report_generator")
@@ -18,9 +18,9 @@ async def generate_report(
     if not llm.enabled:
         raise RuntimeError("LLM client is not configured")
     logger.info("generating report claims=%s", len(claims))
-    payload = REPORT_PROMPT.format(claims=_format_claims(claims))
+    payload = REPORT_USER_PROMPT.format(claims=_format_claims(claims))
     data, usage = await llm.generate_json_with_usage(
-        "Report summary",
+        REPORT_SYSTEM_PROMPT,
         payload,
         trace={"claims_total": len(claims)},
     )

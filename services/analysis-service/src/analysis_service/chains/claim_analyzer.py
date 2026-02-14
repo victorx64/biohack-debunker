@@ -8,7 +8,7 @@ from typing import List
 import httpx
 
 from ..llm_client import LLMClient, LLMUsage
-from ..prompts.analysis import CLAIM_ANALYSIS_PROMPT
+from ..prompts.analysis import CLAIM_ANALYSIS_SYSTEM_PROMPT, CLAIM_ANALYSIS_USER_PROMPT
 from ..schemas import ClaimAnalysis, EvidenceSource
 
 logger = logging.getLogger("analysis_service.claim_analyzer")
@@ -48,10 +48,10 @@ async def analyze_claim(
     if not llm.enabled:
         raise RuntimeError("LLM client is not configured")
     logger.info("analyzing claim claim=%s sources=%s", claim[:120], len(sources))
-    evidence = _format_evidence(sources)
-    prompt = CLAIM_ANALYSIS_PROMPT.format(claim=claim, evidence=evidence)
+    input_json = _format_prompt_input(claim, sources)
+    prompt = CLAIM_ANALYSIS_USER_PROMPT.format(input_json=input_json)
     data, usage = await llm.generate_json_with_usage(
-        "Claim analysis",
+        CLAIM_ANALYSIS_SYSTEM_PROMPT,
         prompt,
         trace={
             "claim_index": claim_index,
@@ -64,7 +64,7 @@ async def analyze_claim(
 
 def _format_evidence(sources: List[EvidenceSource]) -> str:
     if not sources:
-        return "No evidence sources provided."
+        return "[]"
     items = []
     for source in sources:
         items.append(
@@ -78,6 +78,14 @@ def _format_evidence(sources: List[EvidenceSource]) -> str:
             }
         )
     return json.dumps(items, ensure_ascii=False)
+
+
+def _format_prompt_input(claim: str, sources: List[EvidenceSource]) -> str:
+    payload = {
+        "claim": claim,
+        "evidence": json.loads(_format_evidence(sources)),
+    }
+    return json.dumps(payload, ensure_ascii=False)
 
 
 def _coerce_analysis(data: object, sources: List[EvidenceSource]) -> ClaimAnalysis:

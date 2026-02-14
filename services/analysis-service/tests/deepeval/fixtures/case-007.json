@@ -1,0 +1,32 @@
+{
+  "id": "case-007",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 8.0,
+      "text": "Melatonin reduces sleep-onset latency in adults with insomnia symptoms."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Melatonin reduces sleep-onset latency in adults with insomnia symptoms.",
+      "verdict": "supported",
+      "references": [
+        {
+          "title": "Meta-analysis: efficacy of melatonin for primary sleep disorders",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/20408925/"
+        },
+        {
+          "title": "European Insomnia Guideline (includes melatonin recommendations)",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/25846534/"
+        }
+      ]
+    }
+  ]
+}

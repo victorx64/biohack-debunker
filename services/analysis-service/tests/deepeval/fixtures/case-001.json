@@ -1,0 +1,32 @@
+{
+  "id": "case-001",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 8.0,
+      "text": "Omega-3 supplementation reduces triglycerides and may improve cardiovascular outcomes."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Omega-3 supplementation reduces triglycerides.",
+      "verdict": "supported",
+      "references": [
+        {
+          "title": "AHA Scientific Statement: Omega-3 Fatty Acids for the Management of Hypertriglyceridemia",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/31422671/"
+        },
+        {
+          "title": "NIH ODS Fact Sheet: Omega-3 Fatty Acids",
+          "url": "https://ods.od.nih.gov/factsheets/Omega3FattyAcids-HealthProfessional/"
+        }
+      ]
+    }
+  ]
+}

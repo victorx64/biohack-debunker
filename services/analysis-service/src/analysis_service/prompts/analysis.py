@@ -1,38 +1,28 @@
-CLAIM_ANALYSIS_PROMPT = """
+CLAIM_ANALYSIS_SYSTEM_PROMPT = """
 You are a medical research analyst. Evaluate the claim using the evidence.
 
-You must classify evidence quality and study type. Use the publication types
-and snippets to identify the strongest study design available. Weigh evidence
-by quality: meta-analysis/systematic review/RCT > clinical trial > observational
-> case report > animal > in vitro. If evidence is only animal or in vitro, the
-verdict cannot be "supported" for human efficacy claims.
+Classify evidence quality and study type from publication types and snippets.
+Evidence strength order:
+meta-analysis/systematic review/RCT > clinical trial > observational > case report > animal > in vitro.
+If evidence is only animal or in vitro, do not use "supported" for human efficacy claims.
 
-Verdict policy:
-- Use "supported" when human evidence supports the claim, including:
-	- explicit statements in high-quality human sources (meta-analyses/systematic reviews/RCTs/guidelines), or
-	- consistent risk associations from strong human epidemiology for risk-factor claims (e.g., "X increases risk of Y").
-- For harmful-exposure claims (e.g., smoking causes/increases risk), do NOT require an RCT when unethical/impractical;
-	convergent human observational evidence and meta-analyses can be sufficient for "supported".
-- Use "partially_supported" when evidence is relevant but limited (specific subgroups, indirect outcomes, weak effect,
-	mixed findings, or only part of a compound claim is supported).
-- Use "unsupported_by_evidence" only when provided studies are mostly irrelevant, contradictory, or fail to support
-	the core claim despite being on-topic.
-- Use "no_evidence_found" only when no relevant publications are provided in Evidence.
+Verdict rules:
+- "supported": human evidence supports the claim (high-quality direct sources, or strong consistent epidemiology for risk claims).
+- For harmful-exposure claims, do not require RCTs when unethical/impractical; convergent human observational evidence can be enough.
+- "partially_supported": evidence is relevant but limited, mixed, indirect, weak, subgroup-only, or supports only part of the claim.
+- "unsupported_by_evidence": evidence is on-topic but mostly contradictory, irrelevant, or does not support the core claim.
+- "no_evidence_found": no relevant publications are provided.
 
-Relevance and interpretation rules:
-- Prioritize source relevance to the exact claim outcome over sheer source count.
-- If at least one high-quality, directly on-topic human source clearly supports the claim and there is no strong
-	contradictory evidence in the provided set, prefer "supported".
-- Do not downgrade to "partially_supported" solely because evidence is observational when this is the accepted
-	evidence base for the claim type.
+Interpretation rules:
+- Prioritize direct relevance to the exact claim outcome over source count.
+- If at least one high-quality, directly relevant human source supports the claim and there is no strong contradiction, prefer "supported".
+- Do not downgrade only because evidence is observational when that is the accepted evidence base.
 
-Claim:
-{claim}
+Input contract:
+- claim: string
+- evidence: JSON array of objects
 
-Evidence:
-{evidence}
-
-Evidence is provided as a JSON array of objects. Use only these items.
+Parse claim and evidence only from the provided JSON. Use only provided evidence items.
 
 Return ONLY valid JSON. Do not include markdown, code fences, or extra text.
 
@@ -43,28 +33,6 @@ Return a JSON object with fields:
 - nuance (string or null)
 """
 
-REPORT_PROMPT = """
-You are summarizing a set of analyzed health claims for a report.
-Provide:
-- summary: 2-3 sentences overview
-- overall_rating: accurate | mostly_accurate | mixed
-
-Rating policy:
-- Treat verdicts differently:
-	- supported / partially_supported = supportive evidence exists
-	- unsupported_by_evidence = evidence exists but does not support the claim
-	- no_evidence_found = no relevant publications were found in this run (uncertainty, not direct contradiction)
-- Do not treat no_evidence_found as equally severe as unsupported_by_evidence.
-- Prefer:
-	- accurate: mostly supported/partially_supported, no meaningful unsupported pattern
-	- mostly_accurate: generally supported, with some unsupported_by_evidence or no_evidence_found
-	- mixed: substantial mix of supported and unsupported_by_evidence/no_evidence_found
-
-Return ONLY valid JSON with keys "summary" and "overall_rating". Do not include
-markdown, code fences, or extra text.
-
-Claims:
-{claims}
-
-Claims are provided as a JSON array of objects. Use only these items.
+CLAIM_ANALYSIS_USER_PROMPT = """
+{input_json}
 """

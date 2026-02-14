@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from typing import List
 
 from ..llm_client import LLMClient
-from ..prompts.extraction import CLAIM_EXTRACTION_PROMPT
+from ..prompts.extraction import (
+    CLAIM_EXTRACTION_SYSTEM_PROMPT,
+    CLAIM_EXTRACTION_USER_PROMPT,
+)
 from ..schemas import ClaimDraft, TranscriptSegment
 
 logger = logging.getLogger("analysis_service.claim_extractor")
@@ -34,12 +38,14 @@ async def extract_claims(
 
     async def _extract_chunk(index: int, chunk: str) -> List[ClaimDraft]:
         async with semaphore:
-            payload = CLAIM_EXTRACTION_PROMPT.format(
-                transcript=chunk,
+            system_prompt = CLAIM_EXTRACTION_SYSTEM_PROMPT.format(
                 claims_per_chunk=claims_per_chunk,
             )
+            payload = CLAIM_EXTRACTION_USER_PROMPT.format(
+                segments_json=chunk,
+            )
             data = await llm.generate_json(
-                "Claim extraction",
+                system_prompt,
                 payload,
                 trace={"chunk": index, "chunks_total": len(chunks)},
             )
@@ -86,7 +92,6 @@ def _coerce_claims(data: object) -> List[ClaimDraft]:
         claims.append(
             ClaimDraft(
                 claim=claim,
-                category=_normalize(item.get("category")),
                 timestamp=_normalize(item.get("timestamp")),
                 specificity=_normalize(item.get("specificity")),
                 search_query=_normalize(item.get("search_query")),
@@ -106,23 +111,32 @@ def _chunk_segments(segments: List[TranscriptSegment], limit: int = 5000) -> Lis
     if not segments:
         return []
     chunks: List[str] = []
-    current: List[str] = []
-    current_len = 0
+    current: List[dict[str, str]] = []
+
+    def _serialize(items: List[dict[str, str]]) -> str:
+        return json.dumps(items, ensure_ascii=False)
+
     for segment in segments:
         text = segment.text.strip()
         if not text:
             continue
         timestamp = _format_timestamp(segment.start)
-        line = f"[{timestamp}] {text}"
-        line_len = len(line) + 1
-        if current and current_len + line_len > limit:
-            chunks.append("\n".join(current))
+        item = {"timestamp": timestamp, "text": text}
+        candidate = current + [item]
+        candidate_len = len(_serialize(candidate))
+
+        if current and candidate_len > limit:
+            chunks.append(_serialize(current))
             current = []
-            current_len = 0
-        current.append(line)
-        current_len += line_len
+
+        if len(_serialize([item])) > limit:
+            chunks.append(_serialize([item]))
+            continue
+
+        current.append(item)
+
     if current:
-        chunks.append("\n".join(current))
+        chunks.append(_serialize(current))
     logger.info(
         "transcript segments chunked segments=%s chunks=%s limit=%s",
         len(segments),

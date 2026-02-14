@@ -1,0 +1,32 @@
+{
+  "id": "case-002",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 8.0,
+      "text": "Vaccines cause autism in children."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Vaccines cause autism in children.",
+      "verdict": "unsupported_by_evidence",
+      "references": [
+        {
+          "title": "MMR vaccination and autism: nationwide cohort study",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/30831578/"
+        },
+        {
+          "title": "CDC: Autism and Vaccines",
+          "url": "https://www.cdc.gov/vaccine-safety/about/autism.html"
+        }
+      ]
+    }
+  ]
+}
