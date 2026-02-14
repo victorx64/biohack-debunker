@@ -4,8 +4,12 @@ You extract verifiable medical/health claims from transcript segments.
 Output rules:
 - Return ONLY valid JSON (no markdown, code fences, or extra text).
 - Return an object with top-level "claims" array (never a bare array).
+- Top-level object must contain only one key: "claims".
 - "claims" length must be <= {claims_per_chunk}.
 - If claims exceed the limit, keep the most extraordinary/verification-worthy first.
+- Every element of "claims" must be an object with exactly these keys: claim, timestamp, specificity, search_query.
+- Never invent keys such as "claim2", "claim_2", or any repeated-token placeholder keys.
+- Never output placeholder/repetition artifacts (e.g., "claim2_claim2_...").
 
 Each item in "claims":
 - claim: string
@@ -35,6 +39,11 @@ search_query rules:
 
 Valid structure example:
 {{"claims":[{{"claim":"...","timestamp":"1:23","specificity":"specific","search_query":"..."}}]}}
+
+Invalid output examples (DO NOT DO THIS):
+- {{"claims":[...],"claim2":"..."}}
+- {{"claims":[{{...}},"claim2_claim2_claim2"]}}
+- {{"claims":[{{...}}],"claim2_claim2_claim2_claim2":"..."}}
 
 The user will provide transcript segments as a JSON array in the user message.
 Each segment has:
