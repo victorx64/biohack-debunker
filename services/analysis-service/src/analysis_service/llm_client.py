@@ -12,6 +12,7 @@ import httpx
 
 logger = logging.getLogger("analysis_service.llm")
 _LOG_PROMPT_MAX_CHARS = 3000
+_LOG_STAGE_MAX_CHARS = 40
 
 
 class LLMClient:
@@ -105,6 +106,7 @@ class LLMClient:
         }
         if self.response_format:
             payload["response_format"] = self.response_format
+        stage = _stage_from_system_prompt(system_prompt)
 
         logger.info(
             "openai request prompts provider=%s model=%s trace=%s system_prompt=%s user_prompt=%s",
@@ -132,7 +134,7 @@ class LLMClient:
             except httpx.ReadTimeout:
                 logger.warning(
                     "openai request timed out stage=%s attempt=%s/%s",
-                    system_prompt,
+                    stage,
                     attempt + 1,
                     self.max_retries + 1,
                 )
@@ -154,7 +156,7 @@ class LLMClient:
                 logger.error(
                     "openai response missing content stage=%s provider=%s model=%s attempt=%s "
                     "finish_reason=%s choice_keys=%s trace=%s response=%s",
-                    system_prompt,
+                    stage,
                     self.provider,
                     self.model,
                     attempt + 1,
@@ -167,6 +169,13 @@ class LLMClient:
                     await _sleep_backoff(self.backoff_seconds, attempt)
                     continue
                 raise ValueError("LLM returned empty content")
+            logger.info(
+                "openai response content provider=%s model=%s trace=%s content=%s",
+                self.provider,
+                self.model,
+                trace or {},
+                _truncate_for_log(content),
+            )
             try:
                 parsed = json.loads(_extract_json(content))
                 if return_usage:
@@ -177,14 +186,14 @@ class LLMClient:
                 if recovered is not None:
                     logger.warning(
                         "openai json decode recovered stage=%s items=%s",
-                        system_prompt,
+                        stage,
                         len(recovered),
                     )
                     if return_usage:
                         return recovered, usage
                     return recovered
                 snippet = (content or "")[:500]
-                logger.error("openai json decode failed stage=%s content=%s", system_prompt, snippet)
+                logger.error("openai json decode failed stage=%s content=%s", stage, snippet)
                 raise
         raise ValueError("LLM request failed after retries")
 
@@ -266,3 +275,10 @@ def _truncate_for_log(text: str, *, max_chars: int = _LOG_PROMPT_MAX_CHARS) -> s
     if len(text) <= max_chars:
         return text
     return f"{text[:max_chars]}... [truncated, total_chars={len(text)}]"
+
+
+def _stage_from_system_prompt(system_prompt: str) -> str:
+    compact = " ".join(system_prompt.split())
+    if len(compact) <= _LOG_STAGE_MAX_CHARS:
+        return compact
+    return f"{compact[:_LOG_STAGE_MAX_CHARS]}..."
