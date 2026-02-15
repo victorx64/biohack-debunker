@@ -1,10 +1,10 @@
 {
-  "id": "case-005",
+  "id": "case-010",
   "segments": [
     {
       "start": 0.0,
-      "end": 10.0,
-      "text": "Weight loss improves insulin sensitivity in adults with obesity."
+      "end": 11.5,
+      "text": "Replacing sugary drinks with water can help reduce daily calorie intake."
     }
   ],
   "analysis_params": {
@@ -15,11 +15,11 @@
   },
   "expected_claims": [
     {
-      "claim": "Weight loss improves insulin sensitivity in adults with obesity.",
+      "claim": "Replacing sugary drinks with water lowers daily calorie intake.",
       "verdict_any_of": ["supported", "likely_supported"],
       "references": [
         {
-          "title": "Weight loss and insulin sensitivity",
+          "title": "Sugar-sweetened beverage substitution studies",
           "url": "https://pubmed.ncbi.nlm.nih.gov/"
         }
       ]

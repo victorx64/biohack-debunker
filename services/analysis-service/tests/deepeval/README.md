@@ -26,6 +26,15 @@ Because of that, the DeepEval dataset should mainly test claims that are realist
 If a case repeatedly returns no eligible human evidence due to claim wording (not because the topic lacks literature),
 update the test claim phrasing to better align with searchable biomedical terminology.
 
+### Claim wording checklist (to avoid false `not_assessable`)
+
+- Prefer canonical clinical terms over conversational modifiers (for example, use `MMR vaccine` instead of `routine childhood vaccines` when the topic is MMR).
+- Avoid over-constraining words that are often not indexed in titles/abstracts (for example, `consistent`, `regular use`, `sustained`, `uncomplicated`) unless essential.
+- Keep the claim atomic and short, with one intervention/exposure and one outcome.
+- Include the core human context only when useful (`adults`, `children`, `humans`) but avoid stacking extra qualifiers in one sentence.
+- For infection-treatment claims, use disease names commonly represented in trials/reviews (for example, `common cold`, `URTI`) rather than long colloquial phrases.
+- If a case returns `not_assessable` with zero sources, first rephrase the claim; only then reconsider the expected verdict.
+
 ## Dataset format
 
 File: services/analysis-service/tests/deepeval/fixtures/analysis_dataset.json

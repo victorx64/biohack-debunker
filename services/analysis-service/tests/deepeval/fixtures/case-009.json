@@ -1,10 +1,10 @@
 {
-  "id": "case-005",
+  "id": "case-009",
   "segments": [
     {
       "start": 0.0,
-      "end": 10.0,
-      "text": "Weight loss improves insulin sensitivity in adults with obesity."
+      "end": 12.5,
+      "text": "Antibiotics are generally not needed for the common cold."
     }
   ],
   "analysis_params": {
@@ -15,11 +15,11 @@
   },
   "expected_claims": [
     {
-      "claim": "Weight loss improves insulin sensitivity in adults with obesity.",
+      "claim": "Antibiotics are generally not needed for the common cold.",
       "verdict_any_of": ["supported", "likely_supported"],
       "references": [
         {
-          "title": "Weight loss and insulin sensitivity",
+          "title": "Antibiotics for viral respiratory infections",
           "url": "https://pubmed.ncbi.nlm.nih.gov/"
         }
       ]

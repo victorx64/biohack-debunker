@@ -1,10 +1,10 @@
 {
-  "id": "case-005",
+  "id": "case-008",
   "segments": [
     {
       "start": 0.0,
-      "end": 10.0,
-      "text": "Weight loss improves insulin sensitivity in adults with obesity."
+      "end": 12.0,
+      "text": "Sunscreen use reduces sunburn in humans."
     }
   ],
   "analysis_params": {
@@ -15,11 +15,11 @@
   },
   "expected_claims": [
     {
-      "claim": "Weight loss improves insulin sensitivity in adults with obesity.",
+      "claim": "Sunscreen use reduces sunburn in humans.",
       "verdict_any_of": ["supported", "likely_supported"],
       "references": [
         {
-          "title": "Weight loss and insulin sensitivity",
+          "title": "Sunscreen efficacy for sunburn prevention",
           "url": "https://pubmed.ncbi.nlm.nih.gov/"
         }
       ]
