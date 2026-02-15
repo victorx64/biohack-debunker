@@ -16,6 +16,7 @@ The user will provide a JSON array of transcript segments. Each segment contains
 4.  **Conciseness:** Keep claims between 6 and 20 words. Be literal and concise.
 5.  **Fidelity:** Preserve the original meaning. Do not add external knowledge, hedging, or interpretation.
 6.  **Medical Context:** Retain essential qualifiers such as specific populations, dosages, timeframes, and clinical outcomes.
+7. **Evidence-retrievability (mandatory):** Only extract claims that are likely verifiable via high-level clinical evidence on PubMed, specifically at least one of: "Meta Analysis"[pt], "Systematic Review"[pt], "Randomized Controlled Trial"[pt], or "Clinical Trial"[pt]. If a claim is too anecdotal, personal, speculative, or otherwise unlikely to have such publications, omit it even if medically relevant.
 
 **Field Specifications:**
 Each object in the `"claims"` array must contain exactly the following keys:
@@ -30,7 +31,7 @@ Each object in the `"claims"` array must contain exactly the following keys:
    - Use `AND` to combine concepts (Population AND Intervention AND Outcome).
    - Use `OR` inside parentheses for synonyms (e.g., `("Heart Attack"[tiab] OR "Myocardial Infarction"[tiab])`).
    - Use `*` for wildcards.
-   - MANDATORY: Append high-level evidence filters unless the topic is extremely niche: `AND (Meta-Analysis[pt] OR Systematic Review[pt] OR Randomized Controlled Trial[pt])`.
+   - MANDATORY: Append high-level evidence filters unless the topic is extremely niche: `AND ("Meta Analysis"[pt] OR "Systematic Review"[pt] OR "Randomized Controlled Trial"[pt] OR "Clinical Trial"[pt])`.
    - Ensure the query is neutral (search for the relationship, not the conclusion).
 
 **Example Output Structure:**
@@ -40,7 +41,7 @@ Each object in the `"claims"` array must contain exactly the following keys:
       "claim": "High-intensity interval training reduces insulin resistance in type 2 diabetics.",
       "timestamp": "12:45",
       "specificity": "specific",
-      "search_query": "(\"High-Intensity Interval Training\"[tiab] OR \"HIIT\"[tiab]) AND \"Insulin Resistance\"[tiab] AND \"Type 2 Diabetes\"[tiab] AND (\"Meta Analysis\"[pt] OR \"Systematic Review\"[pt] OR \"Randomized Controlled Trial\"[pt])"
+      "search_query": "(\"High-Intensity Interval Training\"[tiab] OR \"HIIT\"[tiab]) AND \"Insulin Resistance\"[tiab] AND \"Type 2 Diabetes\"[tiab] AND (\"Meta Analysis\"[pt] OR \"Systematic Review\"[pt] OR \"Randomized Controlled Trial\"[pt] OR \"Clinical Trial\"[pt])"
     }}
   ]
 }}
