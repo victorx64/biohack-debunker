@@ -1,0 +1,28 @@
+{
+  "id": "case-006",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 10.5,
+      "text": "Broad-spectrum antibiotics can increase the risk of Clostridioides difficile infection."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Broad-spectrum antibiotics increase C. difficile infection risk.",
+      "verdict_any_of": ["supported", "likely_supported"],
+      "references": [
+        {
+          "title": "Antibiotic exposure and C. difficile",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/"
+        }
+      ]
+    }
+  ]
+}

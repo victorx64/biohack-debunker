@@ -1,0 +1,28 @@
+{
+  "id": "case-004",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 11.0,
+      "text": "Regular aerobic exercise lowers blood pressure in adults with hypertension."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Aerobic exercise lowers blood pressure in hypertension.",
+      "verdict_any_of": ["supported", "likely_supported"],
+      "references": [
+        {
+          "title": "Exercise and blood pressure meta-analyses",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/"
+        }
+      ]
+    }
+  ]
+}

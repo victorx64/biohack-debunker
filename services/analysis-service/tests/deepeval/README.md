@@ -2,6 +2,30 @@
 
 These tests call the analysis service, match extracted claims to expected claims, and run DeepEval metrics.
 
+## Service goal and test intent
+
+The analysis service is designed to retrieve and reason over **strong human evidence** for medical claims.
+In practice, PubMed retrieval is intentionally biased toward higher-evidence publication types (for example,
+meta-analyses, systematic reviews, randomized clinical trials, and clinical trials), plus human-focused indexing.
+
+Because of that, the DeepEval dataset should mainly test claims that are realistically answerable from this evidence profile.
+
+### What claims we should test
+
+- Claims that are medically verifiable in humans (causal or outcome-oriented statements).
+- Claims with clear clinical concepts (population/intervention/exposure/outcome) that map to PubMed terms.
+- Claims where high-quality human literature is expected to exist (or is known to exist).
+- Controversial or high-impact claims are preferred over generic wellness statements.
+
+### What claims to avoid in the main dataset
+
+- Claims that rely on vague phrasing with poor PubMed term mapping.
+- Claims that are unlikely to have strong human evidence and will systematically return zero sources.
+- Claims better suited to animal/mechanistic evidence when the test expects a supported/refuted verdict from human studies.
+
+If a case repeatedly returns no eligible human evidence due to claim wording (not because the topic lacks literature),
+update the test claim phrasing to better align with searchable biomedical terminology.
+
 ## Dataset format
 
 File: services/analysis-service/tests/deepeval/fixtures/analysis_dataset.json

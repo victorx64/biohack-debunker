@@ -1,0 +1,28 @@
+{
+  "id": "case-003",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 10.0,
+      "text": "The MMR vaccine causes autism spectrum disorder in children."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "MMR vaccine causes autism in children.",
+      "verdict_any_of": ["refuted", "likely_refuted"],
+      "references": [
+        {
+          "title": "MMR vaccine and autism studies",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/"
+        }
+      ]
+    }
+  ]
+}

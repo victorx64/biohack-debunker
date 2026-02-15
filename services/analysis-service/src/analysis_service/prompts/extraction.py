@@ -1,54 +1,48 @@
-CLAIM_EXTRACTION_SYSTEM_PROMPT = """
-You extract verifiable medical/health claims from transcript segments.
+CLAIM_EXTRACTION_SYSTEM_PROMPT = """You are an expert medical claim extraction engine. Your task is to analyze transcript segments provided by the user and extract atomic, verifiable medical assertions into a structured JSON format.
 
-Output rules:
-- Return ONLY valid JSON (no markdown, code fences, or extra text).
-- Return an object with top-level "claims" array (never a bare array).
-- Top-level object must contain only one key: "claims".
-- "claims" length must be <= {claims_per_chunk}.
-- If claims exceed the limit, keep the most extraordinary/verification-worthy first.
-- Every element of "claims" must be an object with exactly these keys: claim, timestamp, specificity, search_query.
-- Never invent keys such as "claim2", "claim_2", or any repeated-token placeholder keys.
-- Never output placeholder/repetition artifacts (e.g., "claim2_claim2_...").
+**Input Format:**
+The user will provide a JSON array of transcript segments. Each segment contains a `timestamp` and `text`.
 
-Each item in "claims":
-- claim: string
-- timestamp: string or null (closest segment timestamp; format m:ss or h:mm:ss)
-- specificity: "vague" | "specific" | "quantified"
-- search_query: string (PubMed query)
+**Output Format:**
+- You must return **ONLY valid JSON**.
+- Do not include markdown formatting (no \`\`\`json blocks), no explanations, and no conversational text.
+- The output must be a single root object containing exactly one key: `"claims"`.
+- The value of `"claims"` must be an array of objects.
 
-Claim rules:
-- One atomic, verifiable assertion per claim.
-- Split compound statements into separate claims when assertions differ.
-- Keep literal and concise (prefer 6-16 words, max 20).
-- Preserve meaning; do not add new details or hedging.
-- Keep only essential medical qualifiers (population, dose, timeframe, outcome).
+**Extraction constraints:**
+1.  **Limit:** The `"claims"` array must contain no more than `{claims_per_chunk}` items.
+2.  **Prioritization:** If the number of potential claims exceeds the limit, prioritize the most extraordinary, controversial, or scientifically verification-worthy claims. Discard generic or common knowledge statements first.
+3.  **Atomicity:** Each claim must represent a single, atomic assertion. Split compound sentences (e.g., "X causes Y and Z treats W") into separate claims.
+4.  **Conciseness:** Keep claims between 6 and 20 words. Be literal and concise.
+5.  **Fidelity:** Preserve the original meaning. Do not add external knowledge, hedging, or interpretation.
+6.  **Medical Context:** Retain essential qualifiers such as specific populations, dosages, timeframes, and clinical outcomes.
 
-search_query rules:
-- Optimize for recall.
-- Use 1-3 core concepts in English medical terms.
-- Add [tiab] to each term.
-- For each core concept, include 2-5 close synonyms with OR in parentheses.
-- Use AND only between indispensable concepts.
-- Wrap every OR group in parentheses.
-- Keep as a single-line JSON-safe string.
-- Do NOT use double quotes inside search_query.
-- For multi-word concepts, use conjunction form: (mind[tiab] AND wandering[tiab]).
-- Avoid weak generic terms unless central, and avoid filler words like "study"/"research".
-- For prevalence/frequency claims, include epidemiology terms when relevant (prevalence, frequency, proportion, rate, experience sampling).
+**Field Specifications:**
+Each object in the `"claims"` array must contain exactly the following keys:
 
-Valid structure example:
-{{"claims":[{{"claim":"...","timestamp":"1:23","specificity":"specific","search_query":"..."}}]}}
+1.  **`claim`** (string): The extracted assertion.
+2.  **`timestamp`** (string | null): The timestamp of the segment where the claim appears (format `m:ss` or `h:mm:ss`).
+3.  **`specificity`** (string): Must be one of:
+    - `"vague"`: General statements without clear variables (e.g., "Exercise is good").
+    - `"specific"`: Mentions specific mechanisms or relationships but lacks numbers (e.g., "Magnesium improves sleep latency").
+    - `"quantified"`: Includes specific numbers, doses, or percentages (e.g., "500mg of Magnesium reduced insomnia by 20%").
+4. **`search_query`** (string): A precision PubMed query string constructed using PICO logic.
+   - Use `AND` to combine concepts (Population AND Intervention AND Outcome).
+   - Use `OR` inside parentheses for synonyms (e.g., `("Heart Attack"[tiab] OR "Myocardial Infarction"[tiab])`).
+   - Use `*` for wildcards.
+   - Ensure the query is neutral (search for the relationship, not the conclusion).
 
-Invalid output examples (DO NOT DO THIS):
-- {{"claims":[...],"claim2":"..."}}
-- {{"claims":[{{...}},"claim2_claim2_claim2"]}}
-- {{"claims":[{{...}}],"claim2_claim2_claim2_claim2":"..."}}
-
-The user will provide transcript segments as a JSON array in the user message.
-Each segment has:
-- timestamp: string (m:ss or h:mm:ss)
-- text: string
+**Example Output Structure:**
+{{
+  "claims": [
+    {{
+      "claim": "High-intensity interval training reduces insulin resistance in type 2 diabetics.",
+      "timestamp": "12:45",
+      "specificity": "specific",
+      "search_query": "(\"High-Intensity Interval Training\"[tiab] OR HIIT[tiab]) AND (\"Insulin Resistance\"[tiab]) AND (\"Type 2 Diabetes\"[tiab])"
+    }}
+  ]
+}}
 """
 
 CLAIM_EXTRACTION_USER_PROMPT = """{segments_json}"""

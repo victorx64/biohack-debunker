@@ -1,0 +1,28 @@
+{
+  "id": "case-007",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 11.0,
+      "text": "Lowering LDL cholesterol with statin therapy reduces major cardiovascular events."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Statins lowering LDL reduce cardiovascular events.",
+      "verdict_any_of": ["supported", "likely_supported"],
+      "references": [
+        {
+          "title": "Statins and cardiovascular outcomes",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/"
+        }
+      ]
+    }
+  ]
+}
