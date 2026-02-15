@@ -15,8 +15,12 @@ from deepeval.test_case import LLMTestCase
 DEFAULT_DATASET_SOURCE = Path(__file__).with_name("fixtures")
 ALLOWED_VERDICTS = {
     "supported",
-    "unsupported_by_evidence",
-    "no_evidence_found",
+    "likely_supported",
+    "conflicting",
+    "insufficient_evidence",
+    "likely_refuted",
+    "refuted",
+    "not_assessable",
 }
 
 

@@ -1,4 +1,4 @@
-.PHONY: up down logs research-logs test-integration test-analysis test-research test-transcription test-transcription-unit test-gateway test-deepeval
+.PHONY: up down logs test-deepeval
 
 up:
 	docker compose up -d --build
@@ -9,30 +9,5 @@ down:
 logs:
 	docker compose logs -f --tail=200
 
-research-logs:
-	docker compose logs -f --tail=200 research-service
-
-test-analysis:
-	docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test-analysis
-
-test-research:
-	docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test-research
-
-test-transcription:
-	docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test-transcription
-
-test-transcription-unit:
-	docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test-transcription-unit
-
-test-gateway:
-	docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test-gateway
-
 test-deepeval:
 	docker compose -f docker-compose.yml -f docker-compose.deepeval.yml run --rm --build deepeval-analysis
-
-test-integration:
-	docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build external-service research-service analysis-service transcription-service
-	$(MAKE) test-analysis
-	$(MAKE) test-research
-	$(MAKE) test-transcription
-	$(MAKE) test-gateway

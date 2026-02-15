@@ -405,64 +405,16 @@ Response 200:
 ## AI Prompts Architecture
 
 ### Claim Extraction Prompt
-```python
-CLAIM_EXTRACTION_PROMPT = """
-You are a medical claim extraction specialist. Analyze the transcript and
-extract all health-related claims suitable for verification.
 
-Claims must be in English so they are easy to search in PubMed.
-
-Return ONLY valid JSON. Do not include markdown, code fences, or extra text.
-
-Return a JSON array with at most {claims_per_chunk} objects. Do not exceed this limit.
-
-Return a JSON array of objects with fields:
-- claim (string)
-- category (string)
-- timestamp (string or null, use the closest timestamp from the transcript if present, format m:ss or h:mm:ss)
-- specificity (vague | specific | quantified)
-
-Transcript (some lines include timestamps like [m:ss] or [h:mm:ss]):
-{transcript}
-"""
-```
+See `services/analysis-service/src/analysis_service/prompts/extraction.py` for details.
 
 ### Claim Analysis Prompt
-```python
-CLAIM_ANALYSIS_PROMPT = """
-You are a medical research analyst. Evaluate the claim using the evidence.
 
-Claim:
-{claim}
-
-Evidence:
-{evidence}
-
-Return ONLY valid JSON. Do not include markdown, code fences, or extra text.
-
-Return a JSON object with fields:
-- verdict (supported | unsupported_by_evidence | no_evidence_found)
-- confidence (0.0-1.0)
-- explanation (2-3 sentences)
-- nuance (string or null)
-"""
-```
+See `services/analysis-service/src/analysis_service/prompts/analysis.py` for details.
 
 ### Report Summary Prompt
-```python
-REPORT_PROMPT = """
-You are summarizing a set of analyzed health claims for a report.
-Provide:
-- summary: 2-3 sentences overview
-- overall_rating: accurate | mostly_accurate | mixed
 
-Return ONLY valid JSON with keys "summary" and "overall_rating". Do not include
-markdown, code fences, or extra text.
-
-Claims:
-{claims}
-"""
-```
+See `services/analysis-service/src/analysis_service/prompts/report.py` for details.
 
 ---
 

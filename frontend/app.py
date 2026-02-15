@@ -57,24 +57,31 @@ def _verdict_emoji(verdict: str | None) -> str:
     if not verdict:
         return "❔"
     normalized = verdict.strip().lower()
-    if normalized == "supported":
-        return "✅"
-    if normalized == "no_evidence_found":
-        return "⭕️"
-    if normalized == "unsupported_by_evidence":
-        return "❌"
+    emoji_map = {
+        "supported": "✅",
+        "likely_supported": "🟢",
+        "conflicting": "⚖️",
+        "insufficient_evidence": "🟡",
+        "likely_refuted": "🟠",
+        "refuted": "❌",
+        "not_assessable": "⭕️",
+    }
+    if normalized in emoji_map:
+        return emoji_map[normalized]
     return "❔"
 
-# 🔴❗️✅❗️❓🟢🟠⭕️🛑❔❕⁉️‼️❔
 def _verdict_label(verdict: str | None) -> str:
     if not verdict:
         return "Unknown"
     normalized = verdict.strip().lower()
     labels = {
         "supported": "Supported",
-        "unsupported": "Unsupported by evidence",
-        "unsupported_by_evidence": "Unsupported by evidence",
-        "no_evidence_found": "No evidence found",
+        "likely_supported": "Likely supported",
+        "conflicting": "Conflicting",
+        "insufficient_evidence": "Insufficient evidence",
+        "likely_refuted": "Likely refuted",
+        "refuted": "Refuted",
+        "not_assessable": "Not assessable",
     }
     return labels.get(normalized, "Unknown")
 
@@ -179,8 +186,12 @@ if analysis_id:
                 st.write(f"Total claims: {len(claims)}")
                 verdict_order = [
                     ("supported", "Supported"),
-                    ("unsupported_by_evidence", "Unsupported by evidence"),
-                    ("no_evidence_found", "No evidence found"),
+                    ("likely_supported", "Likely supported"),
+                    ("conflicting", "Conflicting"),
+                    ("insufficient_evidence", "Insufficient evidence"),
+                    ("likely_refuted", "Likely refuted"),
+                    ("refuted", "Refuted"),
+                    ("not_assessable", "Not assessable"),
                     (None, "Unknown"),
                 ]
                 for verdict_key, verdict_name in verdict_order:

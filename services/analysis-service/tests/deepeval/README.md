@@ -23,7 +23,7 @@ File: services/analysis-service/tests/deepeval/fixtures/analysis_dataset.json
       {
         "claim": "...",
         "verdict": "supported",
-        "verdict_any_of": ["supported", "no_evidence_found"],
+        "verdict_any_of": ["supported", "likely_supported"],
         "references": [
           {
             "title": "Source title",
@@ -40,7 +40,7 @@ Notes:
 - Use either `verdict` or `verdict_any_of` per claim.
 - `verdict_any_of` helps with minor label variations.
 - `references` is optional metadata for stakeholder traceability and is not used by test assertions.
-- Canonical verdicts: `supported`, `unsupported_by_evidence`, `no_evidence_found`.
+- Canonical verdicts: `supported`, `likely_supported`, `conflicting`, `insufficient_evidence`, `likely_refuted`, `refuted`, `not_assessable`.
 
 ## Environment variables
 
