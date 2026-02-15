@@ -97,18 +97,12 @@ class PubMedClient:
     def build_query(self, query: str) -> str:
         # start_year = date.today().year - 10
         # date_range = f"\"{start_year}/01/01\"[Date - Publication] : \"3000\"[Date - Publication]"
-        evidence_filter = (
-            "(\"Meta-Analysis\"[Publication Type] OR \"Systematic Review\"[Publication Type] "
-            "OR \"Randomized Controlled Trial\"[Publication Type] OR \"Clinical Trial\"[Publication Type])"
-        )
-        humans_filter = "Humans[Mesh]"
-        language_filter = "english[lang]"
+
         query = query.strip()
         if not query:
             return query
         return (
-            f"({query}) AND {evidence_filter} AND {humans_filter} "
-            f"AND {language_filter}"
+            f"({query}) AND Humans[Mesh] AND english[lang]"
             # f"AND {language_filter} AND ({date_range})"
         )
 

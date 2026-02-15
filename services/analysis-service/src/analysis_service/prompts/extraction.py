@@ -30,6 +30,7 @@ Each object in the `"claims"` array must contain exactly the following keys:
    - Use `AND` to combine concepts (Population AND Intervention AND Outcome).
    - Use `OR` inside parentheses for synonyms (e.g., `("Heart Attack"[tiab] OR "Myocardial Infarction"[tiab])`).
    - Use `*` for wildcards.
+   - MANDATORY: Append high-level evidence filters unless the topic is extremely niche: `AND (Meta-Analysis[pt] OR Systematic Review[pt] OR Randomized Controlled Trial[pt])`.
    - Ensure the query is neutral (search for the relationship, not the conclusion).
 
 **Example Output Structure:**
@@ -39,7 +40,7 @@ Each object in the `"claims"` array must contain exactly the following keys:
       "claim": "High-intensity interval training reduces insulin resistance in type 2 diabetics.",
       "timestamp": "12:45",
       "specificity": "specific",
-      "search_query": "(\"High-Intensity Interval Training\"[tiab] OR HIIT[tiab]) AND (\"Insulin Resistance\"[tiab]) AND (\"Type 2 Diabetes\"[tiab])"
+      "search_query": "(\"High-Intensity Interval Training\"[tiab] OR \"HIIT\"[tiab]) AND \"Insulin Resistance\"[tiab] AND \"Type 2 Diabetes\"[tiab] AND (\"Meta Analysis\"[pt] OR \"Systematic Review\"[pt] OR \"Randomized Controlled Trial\"[pt])"
     }}
   ]
 }}
