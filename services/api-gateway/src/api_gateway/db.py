@@ -11,13 +11,10 @@ import asyncpg
 @dataclass(frozen=True)
 class ClaimInsert:
     claim: str
-    category: str | None
     timestamp: str | None
     verdict: str | None
     confidence: float | None
     explanation: str | None
-    evidence_level: str | None
-    study_type: str | None
     search_query: str | None
     sources: list
     pubmed_requests: int = 0
@@ -184,22 +181,19 @@ async def insert_claims_and_sources(
                 timestamp_start = _parse_timestamp(claim.timestamp)
                 await conn.execute(
                     "INSERT INTO claims "
-                    "(id, analysis_id, claim_text, timestamp_start, category, verdict, "
-                    "confidence, explanation, evidence_level, study_type, search_query, "
+                    "(id, analysis_id, claim_text, timestamp_start, verdict, "
+                    "confidence, explanation, search_query, "
                     "pubmed_requests, "
                     "llm_prompt_tokens, llm_completion_tokens, "
                     "created_at) "
-                    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)",
+                    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)",
                     claim_id,
                     analysis_id,
                     claim.claim,
                     timestamp_start,
-                    claim.category,
                     claim.verdict,
                     claim.confidence,
                     claim.explanation,
-                    claim.evidence_level,
-                    claim.study_type,
                     claim.search_query,
                     claim.pubmed_requests,
                     claim.llm_prompt_tokens,
