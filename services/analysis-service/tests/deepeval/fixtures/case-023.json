@@ -15,7 +15,7 @@
   },
   "expected_claims": [
     {
-      "claim": "Sauna treats heavy metal poisoning by sweating out heavy metals.",
+      "claim": "Sauna detoxes heavy metals through sweat.",
       "verdict_any_of": ["insufficient_evidence", "not_assessable"],
       "references": [
         {

@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 from typing import List
 
 from ..llm_client import LLMClient
@@ -15,6 +16,7 @@ from ..prompts.extraction import (
 from ..schemas import ClaimDraft, TranscriptSegment
 
 logger = logging.getLogger("analysis_service.claim_extractor")
+_SEARCH_QUERY_MAX_ATTEMPTS = 3
 
 
 async def extract_claims(
@@ -58,12 +60,39 @@ async def extract_claims(
             query_payload = CLAIM_QUERY_USER_PROMPT.format(
                 claims_json=_format_query_input(claims),
             )
-            query_data = await llm.generate_json(
-                CLAIM_QUERY_SYSTEM_PROMPT,
-                query_payload,
-                trace={"chunk": index, "chunks_total": len(chunks), "stage": "search_query"},
-            )
-            _apply_search_queries(claims, query_data)
+            invalid_queries: List[str] = []
+            for attempt in range(1, _SEARCH_QUERY_MAX_ATTEMPTS + 1):
+                query_data = await llm.generate_json(
+                    CLAIM_QUERY_SYSTEM_PROMPT,
+                    query_payload,
+                    trace={
+                        "chunk": index,
+                        "chunks_total": len(chunks),
+                        "stage": "search_query",
+                        "attempt": attempt,
+                    },
+                )
+                _reset_search_queries(claims)
+                _apply_search_queries(claims, query_data)
+                invalid_queries = _collect_invalid_search_queries(claims)
+                if not invalid_queries:
+                    break
+                logger.warning(
+                    "invalid search_query output chunk=%s/%s attempt=%s/%s details=%s",
+                    index,
+                    len(chunks),
+                    attempt,
+                    _SEARCH_QUERY_MAX_ATTEMPTS,
+                    invalid_queries,
+                )
+                if attempt < _SEARCH_QUERY_MAX_ATTEMPTS:
+                    query_payload = _build_query_retry_payload(claims)
+
+            if invalid_queries:
+                raise RuntimeError(
+                    "search_query generation failed validation after retries: "
+                    + "; ".join(invalid_queries)
+                )
             return claims
 
     tasks = [
@@ -150,6 +179,60 @@ def _apply_search_queries(claims: List[ClaimDraft], data: object) -> None:
         if identifier < 1 or identifier > len(claims):
             continue
         claims[identifier - 1].search_query = _normalize(item.get("search_query"))
+
+
+def _reset_search_queries(claims: List[ClaimDraft]) -> None:
+    for claim in claims:
+        claim.search_query = None
+
+
+def _build_query_retry_payload(claims: List[ClaimDraft]) -> str:
+    base_payload = CLAIM_QUERY_USER_PROMPT.format(
+        claims_json=_format_query_input(claims),
+    )
+    return (
+        f"{base_payload}\n\n"
+        "Previous output contained invalid or truncated `search_query` values. "
+        "Regenerate complete JSON for all claims. "
+        "Each search_query must be a full PubMed query with balanced parentheses and balanced quotes."
+    )
+
+
+def _collect_invalid_search_queries(claims: List[ClaimDraft]) -> List[str]:
+    invalid: List[str] = []
+    for index, claim in enumerate(claims, start=1):
+        query = claim.search_query
+        if not query:
+            invalid.append(f"id={index}:missing")
+            continue
+        reason = _validate_search_query(query)
+        if reason:
+            invalid.append(f"id={index}:{reason}")
+    return invalid
+
+
+def _validate_search_query(query: str) -> str | None:
+    text = query.strip()
+    if len(text) < 12:
+        return "too_short"
+
+    if re.search(r"\b(?:AND|OR|NOT)\s*$", text, flags=re.IGNORECASE):
+        return "dangling_operator"
+
+    if text.endswith("("):
+        return "dangling_open_paren"
+
+    if text.count("(") != text.count(")"):
+        return "unbalanced_parentheses"
+
+    quote_count = text.count('"')
+    if quote_count % 2 != 0:
+        return "unbalanced_quotes"
+
+    if text.count("[") != text.count("]"):
+        return "unbalanced_brackets"
+
+    return None
 
 
 def _chunk_segments(segments: List[TranscriptSegment], limit: int = 5000) -> List[str]:

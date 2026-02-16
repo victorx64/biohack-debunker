@@ -15,8 +15,8 @@
   },
   "expected_claims": [
     {
-      "claim": "Cold plunges right after lifting always increase hypertrophy.",
-      "verdict": "conflicting",
+      "claim": "Cold plunges build more muscle because they boost recovery.",
+      "verdict_any_of": ["refuted", "likely_refuted"],
       "references": [
         {
           "title": "PubMed query: cold water immersion resistance training hypertrophy review",

@@ -95,7 +95,9 @@ async def fetch_research(
     max_results: int,
     sources: List[str],
 ) -> tuple[List[EvidenceSource], dict[str, int]]:
-    query = search_query or claim
+    query = (search_query or "").strip()
+    if not query:
+        raise ValueError("search_query is missing or invalid")
     payload = {
         "query": query,
         "max_results": max_results,

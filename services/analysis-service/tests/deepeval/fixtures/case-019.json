@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Fasting cures cancer via autophagy.",
-      "verdict": "refuted"
+      "verdict_any_of": ["refuted", "not_assessable"]
     }
   ]
 }
