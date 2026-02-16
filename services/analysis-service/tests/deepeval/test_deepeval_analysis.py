@@ -144,6 +144,7 @@ class MetricsAccumulator:
 
 
 _METRICS_ACCUMULATOR = MetricsAccumulator()
+_ENTAILMENT_CACHE: dict[tuple[str, str, str, bool], bool] = {}
 
 
 def _load_dataset() -> list[dict[str, Any]]:
@@ -201,6 +202,121 @@ def _similarity(left: str, right: str) -> float:
     return SequenceMatcher(None, _normalize_text(left), _normalize_text(right)).ratio()
 
 
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    normalized = raw.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    return default
+
+
+def _openai_chat_completion(
+    *,
+    model_name: str,
+    system_prompt: str,
+    user_prompt: str,
+    timeout_seconds: float,
+) -> str:
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY is not set")
+
+    base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+    endpoint = f"{base_url}/chat/completions"
+    payload = {
+        "model": model_name,
+        "temperature": 0,
+        "max_tokens": 6,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+    }
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    response = httpx.post(
+        endpoint,
+        json=payload,
+        headers=headers,
+        timeout=timeout_seconds,
+    )
+    response.raise_for_status()
+    data = response.json()
+    try:
+        content = data["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError) as exc:
+        raise RuntimeError(f"invalid entailment response payload: {data}") from exc
+    return str(content)
+
+
+def _entails_one_way(*, premise: str, hypothesis: str, model_name: str) -> bool:
+    system_prompt = (
+        "You are an NLI judge. Decide if PREMISE logically entails HYPOTHESIS. "
+        "Respond with exactly one token: ENTAILED or NOT_ENTAILED."
+    )
+    user_prompt = (
+        f"PREMISE: {premise}\n"
+        f"HYPOTHESIS: {hypothesis}\n"
+        "Answer with ENTAILED or NOT_ENTAILED."
+    )
+    raw = _openai_chat_completion(
+        model_name=model_name,
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
+        timeout_seconds=float(os.getenv("DEEPEVAL_ENTAILMENT_TIMEOUT", "20")),
+    )
+    decision = " ".join(raw.strip().lower().split())
+    if "not_entailed" in decision or "not entailed" in decision:
+        return False
+    if "entailed" in decision:
+        return True
+    if decision in {"yes", "true"}:
+        return True
+    if decision in {"no", "false"}:
+        return False
+    raise RuntimeError(f"unexpected entailment label: {raw!r}")
+
+
+def _entails_claim(
+    *,
+    expected_text: str,
+    actual_text: str,
+    model_name: str,
+    require_equivalence: bool,
+) -> bool:
+    cache_key = (expected_text, actual_text, model_name, require_equivalence)
+    if cache_key in _ENTAILMENT_CACHE:
+        return _ENTAILMENT_CACHE[cache_key]
+
+    forward = _entails_one_way(
+        premise=actual_text,
+        hypothesis=expected_text,
+        model_name=model_name,
+    )
+    if not forward:
+        _ENTAILMENT_CACHE[cache_key] = False
+        return False
+
+    if not require_equivalence:
+        _ENTAILMENT_CACHE[cache_key] = True
+        return True
+
+    backward = _entails_one_way(
+        premise=expected_text,
+        hypothesis=actual_text,
+        model_name=model_name,
+    )
+    result = forward and backward
+    _ENTAILMENT_CACHE[cache_key] = result
+    return result
+
+
 def _expected_verdict_values(expected: dict[str, Any]) -> set[str]:
     expected_any_of = expected.get("verdict_any_of")
     if expected_any_of:
@@ -244,15 +360,49 @@ def _match_expected_claims(
     expected_claims: list[dict[str, Any]],
     actual_claims: list[dict[str, Any]],
     threshold: float,
+    model_name: str,
 ) -> MatchResult:
     remaining_actual = actual_claims.copy()
     pairs: list[tuple[dict[str, Any], dict[str, Any]]] = []
     missing_expected: list[dict[str, Any]] = []
+    use_entailment = os.getenv("DEEPEVAL_CLAIM_MATCH_MODE", "entailment").strip().lower() in {
+        "entailment",
+        "hybrid",
+    }
+    require_equivalence = _env_bool("DEEPEVAL_CLAIM_MATCH_EQUIVALENCE", False)
 
     for expected in expected_claims:
         expected_text = str(expected.get("claim") or "").strip()
         if not expected_text:
             raise AssertionError("expected claim text is missing")
+
+        entailment_candidates: list[tuple[float, int]] = []
+        if use_entailment:
+            for index, actual in enumerate(remaining_actual):
+                actual_text = str(actual.get("claim") or "").strip()
+                try:
+                    is_entailed = _entails_claim(
+                        expected_text=expected_text,
+                        actual_text=actual_text,
+                        model_name=model_name,
+                        require_equivalence=require_equivalence,
+                    )
+                except Exception:
+                    use_entailment = False
+                    entailment_candidates = []
+                    break
+                if is_entailed:
+                    entailment_candidates.append((
+                        _similarity(expected_text, actual_text),
+                        index,
+                    ))
+
+        if entailment_candidates:
+            _, best_index = max(entailment_candidates, key=lambda item: item[0])
+            actual = remaining_actual.pop(best_index)
+            pairs.append((expected, actual))
+            continue
+
         best_index = None
         best_score = -1.0
         for index, actual in enumerate(remaining_actual):
@@ -415,7 +565,12 @@ def test_deepeval_analysis(case: dict[str, Any]) -> None:
     if not expected_claims:
         raise AssertionError("expected_claims are required")
 
-    match_result = _match_expected_claims(expected_claims, actual_claims, threshold)
+    match_result = _match_expected_claims(
+        expected_claims,
+        actual_claims,
+        threshold,
+        model_name,
+    )
     pairs = match_result.pairs
     _METRICS_ACCUMULATOR.add_extraction_counts(
         tp=len(pairs),
