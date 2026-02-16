@@ -1,0 +1,28 @@
+{
+  "id": "case-029",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 8.0,
+      "text": "Berberine is identical to metformin in every way and has no side effects."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Berberine is equivalent to metformin with no side effects.",
+      "verdict": "likely_refuted",
+      "references": [
+        {
+          "title": "PubMed query: berberine metformin comparative trial review",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=berberine+metformin+comparative+trial+review"
+        }
+      ]
+    }
+  ]
+}

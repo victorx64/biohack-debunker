@@ -1,0 +1,28 @@
+{
+  "id": "case-032",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 8.0,
+      "text": "Biotin is important if you’re deficient. But taking high-dose biotin doesn’t necessarily help hair if you already have adequate levels."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "High-dose biotin does not necessarily improve hair in non-deficient individuals.",
+      "verdict": "likely_supported",
+      "references": [
+        {
+          "title": "PubMed query: biotin supplementation hair deficiency review",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=biotin+supplementation+hair+deficiency+review"
+        }
+      ]
+    }
+  ]
+}

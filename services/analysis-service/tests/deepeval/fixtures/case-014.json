@@ -1,0 +1,28 @@
+{
+  "id": "case-014",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 8.0,
+      "text": "Sleep restriction wrecks glucose control. Even a few nights of short sleep can reduce insulin sensitivity."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Short sleep duration can reduce insulin sensitivity.",
+      "verdict": "supported",
+      "references": [
+        {
+          "title": "PubMed query: sleep restriction insulin sensitivity systematic review",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=sleep+restriction+insulin+sensitivity+systematic+review"
+        }
+      ]
+    }
+  ]
+}

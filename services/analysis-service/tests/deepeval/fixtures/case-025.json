@@ -1,10 +1,10 @@
 {
-  "id": "case-003",
+  "id": "case-025",
   "segments": [
     {
       "start": 0.0,
       "end": 8.0,
-      "text": "You don’t even need to train. Just take creatine and you’ll build muscle sitting on the couch."
+      "text": "Ashwagandha doubles testosterone in every man within two weeks. It’s basically natural TRT."
     }
   ],
   "analysis_params": {
@@ -15,7 +15,7 @@
   },
   "expected_claims": [
     {
-      "claim": "Creatine builds muscle without resistance training.",
+      "claim": "Ashwagandha doubles testosterone in every man within two weeks.",
       "verdict": "refuted"
     }
   ]

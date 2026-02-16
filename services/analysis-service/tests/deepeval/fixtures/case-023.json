@@ -1,0 +1,28 @@
+{
+  "id": "case-023",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 8.0,
+      "text": "Sauna detoxes heavy metals through sweat, so it treats heavy metal poisoning."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Sauna treats heavy metal poisoning by sweating out heavy metals.",
+      "verdict": "insufficient_evidence",
+      "references": [
+        {
+          "title": "PubMed query: sweat heavy metals sauna systematic review",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=sweat+heavy+metals+sauna+systematic+review"
+        }
+      ]
+    }
+  ]
+}

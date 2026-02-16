@@ -3,8 +3,8 @@
   "segments": [
     {
       "start": 0.0,
-      "end": 11.0,
-      "text": "Lowering LDL cholesterol with statin therapy reduces major cardiovascular events."
+      "end": 8.0,
+      "text": "Fish oil prevents heart attacks for everyone. If you take it, you’re basically protected."
     }
   ],
   "analysis_params": {
@@ -15,12 +15,12 @@
   },
   "expected_claims": [
     {
-      "claim": "Statins lowering LDL reduce cardiovascular events.",
-      "verdict_any_of": ["supported", "likely_supported"],
+      "claim": "Omega-3 supplementation prevents myocardial infarction for everyone who takes it.",
+      "verdict": "likely_refuted",
       "references": [
         {
-          "title": "Statins and cardiovascular outcomes",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/"
+          "title": "PubMed query: omega-3 cardiovascular outcomes meta-analysis randomized",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=omega-3+cardiovascular+outcomes+meta-analysis+randomized"
         }
       ]
     }

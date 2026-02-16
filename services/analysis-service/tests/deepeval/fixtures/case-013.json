@@ -1,0 +1,28 @@
+{
+  "id": "case-013",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 8.0,
+      "text": "Blue light is the only thing that affects sleep. Regular indoor light at night doesn’t matter at all."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Only blue light affects sleep; other indoor light at night has no effect.",
+      "verdict": "likely_refuted",
+      "references": [
+        {
+          "title": "PubMed query: indoor light at night melatonin suppression review",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=indoor+light+at+night+melatonin+suppression+review"
+        }
+      ]
+    }
+  ]
+}

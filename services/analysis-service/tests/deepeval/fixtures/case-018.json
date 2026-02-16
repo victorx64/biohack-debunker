@@ -1,0 +1,28 @@
+{
+  "id": "case-018",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 8.0,
+      "text": "Intermittent fasting can be a useful structure. But in trials, weight loss is often similar to continuous calorie restriction when calories match."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Intermittent fasting produces similar weight loss to continuous calorie restriction when calories are matched.",
+      "verdict": "likely_supported",
+      "references": [
+        {
+          "title": "PubMed query: intermittent fasting continuous calorie restriction randomized meta-analysis",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=intermittent+fasting+continuous+calorie+restriction+randomized+meta-analysis"
+        }
+      ]
+    }
+  ]
+}

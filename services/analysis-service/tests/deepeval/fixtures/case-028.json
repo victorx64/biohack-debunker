@@ -1,0 +1,28 @@
+{
+  "id": "case-028",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 8.0,
+      "text": "Berberine can lower fasting glucose and HbA1c in type 2 diabetes in some studies. It also has GI side effects for some people."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Berberine supplementation can reduce glycemic markers (e.g., HbA1c) in type 2 diabetes.",
+      "verdict": "likely_supported",
+      "references": [
+        {
+          "title": "PubMed query: berberine HbA1c type 2 diabetes meta-analysis",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=berberine+HbA1c+type+2+diabetes+meta-analysis"
+        }
+      ]
+    }
+  ]
+}

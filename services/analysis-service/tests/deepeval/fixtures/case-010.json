@@ -3,8 +3,8 @@
   "segments": [
     {
       "start": 0.0,
-      "end": 11.5,
-      "text": "Replacing sugary drinks with water can help reduce daily calorie intake."
+      "end": 8.0,
+      "text": "Melatonin can help with jet lag. It can shift sleep timing and improve sleep onset for some people."
     }
   ],
   "analysis_params": {
@@ -15,12 +15,12 @@
   },
   "expected_claims": [
     {
-      "claim": "Replacing sugary drinks with water lowers daily calorie intake.",
-      "verdict_any_of": ["supported", "likely_supported"],
+      "claim": "Melatonin helps with jet lag by shifting sleep timing and aiding sleep onset.",
+      "verdict": "likely_supported",
       "references": [
         {
-          "title": "Sugar-sweetened beverage substitution studies",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/"
+          "title": "PubMed query: melatonin jet lag systematic review",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=melatonin+jet+lag+systematic+review"
         }
       ]
     }

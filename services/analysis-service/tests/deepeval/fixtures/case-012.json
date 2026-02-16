@@ -1,0 +1,28 @@
+{
+  "id": "case-012",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 8.0,
+      "text": "Light matters. Bright light in the evening can delay circadian timing and make it harder to fall asleep."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Evening bright light exposure can delay circadian timing and impair sleep onset.",
+      "verdict": "likely_supported",
+      "references": [
+        {
+          "title": "PubMed query: evening light exposure melatonin sleep review",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=evening+light+exposure+melatonin+sleep+review"
+        }
+      ]
+    }
+  ]
+}

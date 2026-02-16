@@ -3,8 +3,8 @@
   "segments": [
     {
       "start": 0.0,
-      "end": 11.0,
-      "text": "Regular aerobic exercise lowers blood pressure in adults with hypertension."
+      "end": 8.0,
+      "text": "Caffeine is a reliable ergogenic aid. For endurance sessions, many people see a small but real performance bump."
     }
   ],
   "analysis_params": {
@@ -15,12 +15,12 @@
   },
   "expected_claims": [
     {
-      "claim": "Aerobic exercise lowers blood pressure in hypertension.",
-      "verdict_any_of": ["supported", "likely_supported"],
+      "claim": "Acute caffeine intake can improve endurance performance.",
+      "verdict": "supported",
       "references": [
         {
-          "title": "Exercise and blood pressure meta-analyses",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/"
+          "title": "PubMed query: caffeine endurance performance meta-analysis",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=caffeine+endurance+performance+meta-analysis"
         }
       ]
     }

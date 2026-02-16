@@ -1,10 +1,10 @@
 {
-  "id": "case-003",
+  "id": "case-033",
   "segments": [
     {
       "start": 0.0,
       "end": 8.0,
-      "text": "You don’t even need to train. Just take creatine and you’ll build muscle sitting on the couch."
+      "text": "Apple cider vinegar blunts glucose spikes massively, so diabetics can eat unlimited sugar safely."
     }
   ],
   "analysis_params": {
@@ -15,7 +15,7 @@
   },
   "expected_claims": [
     {
-      "claim": "Creatine builds muscle without resistance training.",
+      "claim": "Apple cider vinegar makes eating unlimited sugar safe for diabetics.",
       "verdict": "refuted"
     }
   ]

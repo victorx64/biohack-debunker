@@ -1,0 +1,28 @@
+{
+  "id": "case-034",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 8.0,
+      "text": "A bit of resistance training helps bone density over time. Mechanical loading is a key signal for bone."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Resistance/weight-bearing exercise can improve or maintain bone mineral density over time.",
+      "verdict": "supported",
+      "references": [
+        {
+          "title": "PubMed query: resistance training bone mineral density meta-analysis",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=resistance+training+bone+mineral+density+meta-analysis"
+        }
+      ]
+    }
+  ]
+}

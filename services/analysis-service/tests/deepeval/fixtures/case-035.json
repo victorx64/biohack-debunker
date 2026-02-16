@@ -1,0 +1,28 @@
+{
+  "id": "case-035",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 8.0,
+      "text": "Seed oils are toxic and directly cause heart disease. The more you consume, the faster your arteries clog."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Seed oils directly cause heart disease in a dose-dependent way.",
+      "verdict": "conflicting",
+      "references": [
+        {
+          "title": "PubMed query: linoleic acid cardiovascular disease systematic review meta-analysis",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=linoleic+acid+cardiovascular+disease+systematic+review+meta-analysis"
+        }
+      ]
+    }
+  ]
+}

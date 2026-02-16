@@ -1,0 +1,28 @@
+{
+  "id": "case-026",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 8.0,
+      "text": "Magnesium can help some people with sleep, especially if intake is low. Results vary by study and population."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Magnesium supplementation may improve sleep outcomes in some populations, especially with low intake.",
+      "verdict": "insufficient_evidence",
+      "references": [
+        {
+          "title": "PubMed query: magnesium supplementation sleep systematic review",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=magnesium+supplementation+sleep+systematic+review"
+        }
+      ]
+    }
+  ]
+}

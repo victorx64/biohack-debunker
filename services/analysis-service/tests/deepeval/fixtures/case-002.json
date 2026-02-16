@@ -3,8 +3,8 @@
   "segments": [
     {
       "start": 0.0,
-      "end": 9.0,
-      "text": "Cigarette smoking increases the risk of developing lung cancer in adults."
+      "end": 8.0,
+      "text": "Creatine also helps you gain lean mass, not just strength. The effect isn’t magic, but it’s consistent across studies."
     }
   ],
   "analysis_params": {
@@ -15,12 +15,12 @@
   },
   "expected_claims": [
     {
-      "claim": "Cigarette smoking increases lung cancer risk.",
-      "verdict_any_of": ["supported", "likely_supported"],
+      "claim": "Creatine supplementation increases lean body mass during resistance training.",
+      "verdict": "likely_supported",
       "references": [
         {
-          "title": "Smoking and lung cancer",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/"
+          "title": "PubMed query: creatine lean mass meta-analysis resistance training",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=creatine+lean+mass+meta-analysis+resistance+training"
         }
       ]
     }

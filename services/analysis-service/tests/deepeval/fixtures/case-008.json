@@ -3,8 +3,8 @@
   "segments": [
     {
       "start": 0.0,
-      "end": 12.0,
-      "text": "Sunscreen use reduces sunburn in humans."
+      "end": 8.0,
+      "text": "Vitamin D is crucial for bone health. But if you’re not deficient, mega-dosing doesn’t automatically reduce fractures."
     }
   ],
   "analysis_params": {
@@ -15,12 +15,12 @@
   },
   "expected_claims": [
     {
-      "claim": "Sunscreen use reduces sunburn in humans.",
-      "verdict_any_of": ["supported", "likely_supported"],
+      "claim": "Vitamin D supplementation does not necessarily reduce fracture risk in non-deficient people.",
+      "verdict": "conflicting",
       "references": [
         {
-          "title": "Sunscreen efficacy for sunburn prevention",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/"
+          "title": "PubMed query: vitamin D supplementation fracture meta-analysis randomized",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=vitamin+D+supplementation+fracture+meta-analysis+randomized"
         }
       ]
     }

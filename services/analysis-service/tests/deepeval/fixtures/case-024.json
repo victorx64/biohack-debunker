@@ -1,0 +1,28 @@
+{
+  "id": "case-024",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 8.0,
+      "text": "Ashwagandha has some trials suggesting reduced stress and anxiety scores. The evidence isn’t perfect, but it’s not nothing."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Ashwagandha supplementation may reduce stress/anxiety scores in some RCTs.",
+      "verdict": "likely_supported",
+      "references": [
+        {
+          "title": "PubMed query: ashwagandha randomized trial stress anxiety meta-analysis",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=ashwagandha+randomized+trial+stress+anxiety+meta-analysis"
+        }
+      ]
+    }
+  ]
+}

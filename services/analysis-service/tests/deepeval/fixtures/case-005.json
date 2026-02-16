@@ -3,8 +3,8 @@
   "segments": [
     {
       "start": 0.0,
-      "end": 10.0,
-      "text": "Weight loss improves insulin sensitivity in adults with obesity."
+      "end": 8.0,
+      "text": "If you’re a habitual coffee drinker, caffeine will never help you in training. Tolerance completely eliminates the benefit."
     }
   ],
   "analysis_params": {
@@ -15,12 +15,12 @@
   },
   "expected_claims": [
     {
-      "claim": "Weight loss improves insulin sensitivity in adults with obesity.",
-      "verdict_any_of": ["supported", "likely_supported"],
+      "claim": "Habitual caffeine use completely eliminates caffeine’s performance benefits.",
+      "verdict": "likely_refuted",
       "references": [
         {
-          "title": "Weight loss and insulin sensitivity",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/"
+          "title": "PubMed query: caffeine habitual users tolerance performance review",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=caffeine+habitual+users+tolerance+performance+review"
         }
       ]
     }

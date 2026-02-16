@@ -3,8 +3,8 @@
   "segments": [
     {
       "start": 0.0,
-      "end": 10.5,
-      "text": "Broad-spectrum antibiotics can increase the risk of Clostridioides difficile infection."
+      "end": 8.0,
+      "text": "Omega-3s are great if your triglycerides are high. Fish oil often lowers triglycerides meaningfully."
     }
   ],
   "analysis_params": {
@@ -15,12 +15,12 @@
   },
   "expected_claims": [
     {
-      "claim": "Broad-spectrum antibiotics increase C. difficile infection risk.",
-      "verdict_any_of": ["supported", "likely_supported"],
+      "claim": "Omega-3 (EPA/DHA) supplementation lowers triglyceride levels.",
+      "verdict": "supported",
       "references": [
         {
-          "title": "Antibiotic exposure and C. difficile",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/"
+          "title": "PubMed query: omega-3 EPA DHA triglycerides meta-analysis",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=omega-3+EPA+DHA+triglycerides+meta-analysis"
         }
       ]
     }

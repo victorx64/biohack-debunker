@@ -1,10 +1,10 @@
 {
-  "id": "case-003",
+  "id": "case-027",
   "segments": [
     {
       "start": 0.0,
       "end": 8.0,
-      "text": "You don’t even need to train. Just take creatine and you’ll build muscle sitting on the couch."
+      "text": "Magnesium glycinate guarantees deep sleep for everyone. If it doesn’t work, you bought the wrong brand."
     }
   ],
   "analysis_params": {
@@ -15,8 +15,8 @@
   },
   "expected_claims": [
     {
-      "claim": "Creatine builds muscle without resistance training.",
-      "verdict": "refuted"
+      "claim": "Magnesium glycinate guarantees improved sleep for everyone.",
+      "verdict": "likely_refuted"
     }
   ]
 }

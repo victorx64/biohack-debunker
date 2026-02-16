@@ -1,0 +1,28 @@
+{
+  "id": "case-011",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 8.0,
+      "text": "Melatonin fixes insomnia permanently. Once you use it for a week, you don’t need it again."
+    }
+  ],
+  "analysis_params": {
+    "claims_per_chunk": 1,
+    "chunk_size_chars": 2000,
+    "research_max_results": 25,
+    "research_sources": ["pubmed"]
+  },
+  "expected_claims": [
+    {
+      "claim": "Short-term melatonin use permanently cures insomnia.",
+      "verdict": "likely_refuted",
+      "references": [
+        {
+          "title": "PubMed query: melatonin insomnia systematic review",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=melatonin+insomnia+systematic+review"
+        }
+      ]
+    }
+  ]
+}
