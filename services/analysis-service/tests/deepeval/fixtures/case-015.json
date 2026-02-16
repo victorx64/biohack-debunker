@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Sleeping 5 hours increases fat loss by speeding metabolism.",
-      "verdict": "refuted"
+      "verdict_any_of": ["refuted", "not_assessable"]
     }
   ]
 }

@@ -9,6 +9,8 @@ from ..llm_client import LLMClient
 from ..prompts.extraction import (
     CLAIM_EXTRACTION_SYSTEM_PROMPT,
     CLAIM_EXTRACTION_USER_PROMPT,
+    CLAIM_QUERY_SYSTEM_PROMPT,
+    CLAIM_QUERY_USER_PROMPT,
 )
 from ..schemas import ClaimDraft, TranscriptSegment
 
@@ -38,18 +40,31 @@ async def extract_claims(
 
     async def _extract_chunk(index: int, chunk: str) -> List[ClaimDraft]:
         async with semaphore:
-            system_prompt = CLAIM_EXTRACTION_SYSTEM_PROMPT.format(
+            extraction_system_prompt = CLAIM_EXTRACTION_SYSTEM_PROMPT.format(
                 claims_per_chunk=claims_per_chunk,
             )
-            payload = CLAIM_EXTRACTION_USER_PROMPT.format(
+            extraction_payload = CLAIM_EXTRACTION_USER_PROMPT.format(
                 segments_json=chunk,
             )
-            data = await llm.generate_json(
-                system_prompt,
-                payload,
+            extracted_data = await llm.generate_json(
+                extraction_system_prompt,
+                extraction_payload,
                 trace={"chunk": index, "chunks_total": len(chunks)},
             )
-            return _coerce_claims(data)
+            claims = _coerce_claims(extracted_data)
+            if not claims:
+                return claims
+
+            query_payload = CLAIM_QUERY_USER_PROMPT.format(
+                claims_json=_format_query_input(claims),
+            )
+            query_data = await llm.generate_json(
+                CLAIM_QUERY_SYSTEM_PROMPT,
+                query_payload,
+                trace={"chunk": index, "chunks_total": len(chunks), "stage": "search_query"},
+            )
+            _apply_search_queries(claims, query_data)
+            return claims
 
     tasks = [
         _extract_chunk(index, chunk)
@@ -104,6 +119,37 @@ def _normalize(value: object) -> str | None:
         return None
     text = str(value).strip()
     return text or None
+
+
+def _format_query_input(claims: List[ClaimDraft]) -> str:
+    payload = {
+        "claims": [
+            {
+                "id": index,
+                "claim": claim.claim,
+                "timestamp": claim.timestamp,
+            }
+            for index, claim in enumerate(claims, start=1)
+        ]
+    }
+    return json.dumps(payload, ensure_ascii=False)
+
+
+def _apply_search_queries(claims: List[ClaimDraft], data: object) -> None:
+    if not isinstance(data, dict):
+        return
+    items = data.get("claims")
+    if not isinstance(items, list):
+        return
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        identifier = item.get("id")
+        if not isinstance(identifier, int):
+            continue
+        if identifier < 1 or identifier > len(claims):
+            continue
+        claims[identifier - 1].search_query = _normalize(item.get("search_query"))
 
 
 def _chunk_segments(segments: List[TranscriptSegment], limit: int = 5000) -> List[str]:
