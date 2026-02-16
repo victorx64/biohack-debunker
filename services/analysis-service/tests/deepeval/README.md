@@ -1,6 +1,27 @@
 # DeepEval analysis tests
 
 These tests call the analysis service, match extracted claims to expected claims, and run DeepEval metrics.
+They also produce an aggregate stakeholder report with claim extraction and veracity classification metrics.
+
+## Stakeholder metrics report
+
+At the end of a run, tests now save a JSON report (`metrics_summary.json`) with:
+
+- Claim extraction metrics (presence/absence level):
+  - `precision`, `recall`, `f1`
+  - based on `TP=matched`, `FN=missing expected`, `FP=extra extracted`
+- Veracity/status metrics on matched claims:
+  - `accuracy`
+  - `macro_f1`, `weighted_f1`
+  - per-class `precision/recall/f1/support`
+  - full `confusion_matrix`
+  - critical flips: `supported_to_refuted` and `refuted_to_supported`
+
+By default the report is written to:
+
+- `services/analysis-service/tests/deepeval/outputs/metrics_summary.json`
+
+The test logs also print a one-line aggregate summary with extraction F1, veracity accuracy, and macro F1.
 
 ## Service goal and test intent
 
@@ -87,6 +108,7 @@ Notes:
 - `DEEPEVAL_CASE_IDS` (optional: comma-separated case IDs to run, e.g. `case-001,case-003`)
 - `DEEPEVAL_RESEARCH_MAX_RESULTS_OVERRIDE` (optional: force `research_max_results` for all cases)
 - `DEEPEVAL_OUTPUT_DIR` (optional but recommended: directory to save raw analysis-service responses for debugging)
+- `DEEPEVAL_METRICS_REPORT_PATH` (optional: explicit path for aggregate `metrics_summary.json`; if omitted, uses `DEEPEVAL_OUTPUT_DIR/metrics_summary.json` when `DEEPEVAL_OUTPUT_DIR` is set, otherwise `outputs/metrics_summary.json`)
 
 ## Docker compose
 
@@ -118,6 +140,7 @@ docker compose -f docker-compose.yml -f docker-compose.deepeval.yml run --rm \
 ```
 
 After the run, inspect saved JSON files in `services/analysis-service/tests/deepeval/outputs/`.
+The aggregate report will be available as `metrics_summary.json` in the same directory (unless `DEEPEVAL_METRICS_REPORT_PATH` is set).
 
 You can pass multiple case IDs as a comma-separated list:
 
@@ -132,4 +155,12 @@ Fast smoke run example:
 ```bash
 DEEPEVAL_CASE_IDS=case-001 DEEPEVAL_RESEARCH_MAX_RESULTS_OVERRIDE=5 \
 docker compose -f docker-compose.yml -f docker-compose.deepeval.yml run --rm deepeval-analysis
+```
+
+Save aggregate report to a custom location:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.deepeval.yml run --rm \
+  -e DEEPEVAL_METRICS_REPORT_PATH=/app/services/analysis-service/tests/deepeval/outputs/stakeholder-metrics.json \
+  deepeval-analysis
 ```
