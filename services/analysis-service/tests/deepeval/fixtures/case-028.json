@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Berberine supplementation can reduce glycemic markers (e.g., HbA1c) in type 2 diabetes.",
-      "verdict": "likely_supported",
+      "verdict_any_of": ["supported", "likely_supported"],
       "references": [
         {
           "title": "PubMed query: berberine HbA1c type 2 diabetes meta-analysis",

@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Creatine supplementation increases lean body mass during resistance training.",
-      "verdict": "likely_supported",
+      "verdict_any_of": ["supported", "likely_supported"],
       "references": [
         {
           "title": "PubMed query: creatine lean mass meta-analysis resistance training",

@@ -93,7 +93,6 @@ def _coerce_claims(data: object) -> List[ClaimDraft]:
             ClaimDraft(
                 claim=claim,
                 timestamp=_normalize(item.get("timestamp")),
-                specificity=_normalize(item.get("specificity")),
                 search_query=_normalize(item.get("search_query")),
             )
         )

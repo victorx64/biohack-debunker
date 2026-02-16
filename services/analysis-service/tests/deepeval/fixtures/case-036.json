@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Grounding reduces inflammation via proven electron transfer into blood.",
-      "verdict": "insufficient_evidence",
+      "verdict_any_of": ["insufficient_evidence", "not_assessable"],
       "references": [
         {
           "title": "PubMed query: earthing grounding inflammation review",

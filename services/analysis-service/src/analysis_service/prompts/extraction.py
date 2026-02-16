@@ -23,11 +23,7 @@ Each object in the `"claims"` array must contain exactly the following keys:
 
 1.  **`claim`** (string): The extracted assertion.
 2.  **`timestamp`** (string | null): The timestamp of the segment where the claim appears (format `m:ss` or `h:mm:ss`).
-3.  **`specificity`** (string): Must be one of:
-    - `"vague"`: General statements without clear variables (e.g., "Exercise is good").
-    - `"specific"`: Mentions specific mechanisms or relationships but lacks numbers (e.g., "Magnesium improves sleep latency").
-    - `"quantified"`: Includes specific numbers, doses, or percentages (e.g., "500mg of Magnesium reduced insomnia by 20%").
-4. **`search_query`** (string): A precision PubMed query string constructed using PICO logic.
+3.  **`search_query`** (string): A precision PubMed query string constructed using PICO logic.
    - Use `AND` to combine concepts (Population AND Intervention AND Outcome).
    - Use `OR` inside parentheses for synonyms (e.g., `("Heart Attack"[tiab] OR "Myocardial Infarction"[tiab])`).
    - Use `*` for wildcards.
@@ -40,7 +36,6 @@ Each object in the `"claims"` array must contain exactly the following keys:
     {{
       "claim": "High-intensity interval training reduces insulin resistance in type 2 diabetics.",
       "timestamp": "12:45",
-      "specificity": "specific",
       "search_query": "(\"High-Intensity Interval Training\"[tiab] OR \"HIIT\"[tiab]) AND \"Insulin Resistance\"[tiab] AND \"Type 2 Diabetes\"[tiab] AND (\"Meta Analysis\"[pt] OR \"Systematic Review\"[pt] OR \"Randomized Controlled Trial\"[pt] OR \"Clinical Trial\"[pt])"
     }}
   ]

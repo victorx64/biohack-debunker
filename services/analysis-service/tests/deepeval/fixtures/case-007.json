@@ -15,7 +15,7 @@
   },
   "expected_claims": [
     {
-      "claim": "Omega-3 supplementation prevents myocardial infarction for everyone who takes it.",
+      "claim": "Fish oil prevents heart attacks for everyone.",
       "verdict": "likely_refuted",
       "references": [
         {

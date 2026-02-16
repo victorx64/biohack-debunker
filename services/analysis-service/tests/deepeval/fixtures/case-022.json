@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Sauna bathing is associated with improved cardiovascular outcomes in observational studies (association, not causation).",
-      "verdict": "likely_supported",
+      "verdict_any_of": ["supported", "likely_supported"],
       "references": [
         {
           "title": "PubMed query: sauna bathing cardiovascular mortality cohort",

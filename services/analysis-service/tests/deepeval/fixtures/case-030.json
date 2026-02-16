@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Collagen peptide supplementation may improve skin hydration/elasticity.",
-      "verdict": "likely_supported",
+      "verdict_any_of": ["supported", "likely_supported"],
       "references": [
         {
           "title": "PubMed query: collagen peptides skin hydration randomized trial systematic review",

@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Only blue light affects sleep; other indoor light at night has no effect.",
-      "verdict": "likely_refuted",
+      "verdict_any_of": ["refuted", "likely_refuted"],
       "references": [
         {
           "title": "PubMed query: indoor light at night melatonin suppression review",

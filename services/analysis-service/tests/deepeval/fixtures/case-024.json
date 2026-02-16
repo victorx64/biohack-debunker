@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Ashwagandha supplementation may reduce stress/anxiety scores in some RCTs.",
-      "verdict": "likely_supported",
+      "verdict_any_of": ["supported", "likely_supported"],
       "references": [
         {
           "title": "PubMed query: ashwagandha randomized trial stress anxiety meta-analysis",

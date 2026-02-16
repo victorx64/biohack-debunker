@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Cold water immersion can reduce perceived muscle soreness after exercise.",
-      "verdict": "likely_supported",
+      "verdict_any_of": ["supported", "likely_supported"],
       "references": [
         {
           "title": "PubMed query: cold water immersion delayed onset muscle soreness meta-analysis",

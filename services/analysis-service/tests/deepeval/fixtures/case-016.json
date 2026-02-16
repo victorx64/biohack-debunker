@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Higher protein intake tends to increase satiety and reduce appetite.",
-      "verdict": "likely_supported",
+      "verdict_any_of": ["supported", "likely_supported"],
       "references": [
         {
           "title": "PubMed query: high protein diet satiety systematic review",

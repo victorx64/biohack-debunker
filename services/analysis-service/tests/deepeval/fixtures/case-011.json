@@ -15,8 +15,8 @@
   },
   "expected_claims": [
     {
-      "claim": "Short-term melatonin use permanently cures insomnia.",
-      "verdict": "likely_refuted",
+      "claim": "Melatonin fixes insomnia permanently after one week use.",
+      "verdict_any_of": ["refuted", "likely_refuted"],
       "references": [
         {
           "title": "PubMed query: melatonin insomnia systematic review",

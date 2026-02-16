@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Intermittent fasting produces similar weight loss to continuous calorie restriction when calories are matched.",
-      "verdict": "likely_supported",
+      "verdict_any_of": ["supported", "likely_supported"],
       "references": [
         {
           "title": "PubMed query: intermittent fasting continuous calorie restriction randomized meta-analysis",

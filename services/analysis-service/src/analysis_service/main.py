@@ -194,7 +194,6 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
         return ClaimResult(
             claim=claim.claim,
             timestamp=claim.timestamp,
-            specificity=claim.specificity,
             search_query=claim.search_query,
             verdict=analysis.verdict,
             confidence=analysis.confidence,
