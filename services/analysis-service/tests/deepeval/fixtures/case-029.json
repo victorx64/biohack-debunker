@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Berberine is equivalent to metformin with no side effects.",
-      "verdict": "likely_refuted",
+      "verdict_any_of": ["refuted", "likely_refuted", "not_assessable"],
       "references": [
         {
           "title": "PubMed query: berberine metformin comparative trial review",

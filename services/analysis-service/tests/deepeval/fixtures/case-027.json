@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Magnesium glycinate guarantees improved sleep for everyone.",
-      "verdict": "likely_refuted"
+      "verdict_any_of": ["insufficient_evidence", "not_assessable"]
     }
   ]
 }

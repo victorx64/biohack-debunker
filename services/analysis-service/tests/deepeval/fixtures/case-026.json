@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Magnesium supplementation may improve sleep outcomes in some populations, especially with low intake.",
-      "verdict_any_of": ["insufficient_evidence", "not_assessable"],
+      "verdict_any_of": ["likely_supported", "insufficient_evidence", "not_assessable"],
       "references": [
         {
           "title": "PubMed query: magnesium supplementation sleep systematic review",

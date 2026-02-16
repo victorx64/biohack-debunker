@@ -58,15 +58,15 @@ Each object in output `"claims"` must contain exactly:
 - Use `AND` to combine concepts (Population AND Intervention AND Outcome).
 - Use `OR` inside parentheses for synonyms.
 - Use `*` for wildcards when useful.
-- Keep query neutral (search relationship, not conclusion).
-- Unless topic is extremely niche, append: `AND ("Meta Analysis"[pt] OR "Systematic Review"[pt] OR "Randomized Controlled Trial"[pt] OR "Clinical Trial"[pt])`.
+- Use single quotes for multi-word phrases.
+- Unless topic is extremely niche, append: `AND ('Meta Analysis'[pt] OR 'Systematic Review'[pt] OR 'Randomized Controlled Trial'[pt] OR 'Clinical Trial'[pt])`.
 
 **Example Output Structure:**
 {
   "claims": [
     {
       "id": 1,
-      "search_query": "(\"High-Intensity Interval Training\"[tiab] OR \"HIIT\"[tiab]) AND \"Insulin Resistance\"[tiab] AND \"Type 2 Diabetes\"[tiab] AND (\"Meta Analysis\"[pt] OR \"Systematic Review\"[pt] OR \"Randomized Controlled Trial\"[pt] OR \"Clinical Trial\"[pt])"
+      "search_query": "('High-Intensity Interval Training'[tiab] OR 'HIIT'[tiab]) AND 'Insulin Resistance'[tiab] AND 'Type 2 Diabetes'[tiab] AND ('Meta Analysis'[pt] OR 'Systematic Review'[pt] OR 'Randomized Controlled Trial'[pt] OR 'Clinical Trial'[pt])"
     }
   ]
 }
