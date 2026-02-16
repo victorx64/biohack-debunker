@@ -16,7 +16,7 @@ The user will provide a JSON array of transcript segments. Each segment contains
 4.  **Conciseness:** Keep claims between 6 and 20 words. Be literal and concise.
 5.  **Fidelity:** Preserve the original meaning. Do not add external knowledge, hedging, or interpretation.
 6.  **Medical Context:** Retain essential qualifiers such as specific populations, dosages, timeframes, and clinical outcomes.
-7. **Evidence-retrievability (mandatory):** Only extract claims that are likely verifiable via high-level clinical evidence on PubMed, specifically at least one of: "Meta Analysis"[pt], "Systematic Review"[pt], "Randomized Controlled Trial"[pt], or "Clinical Trial"[pt]. If a claim is too anecdotal, personal, speculative, or otherwise unlikely to have such publications, omit it even if medically relevant.
+7.  **Evidence requirement:** Extract a claim ONLY if it can reasonably be supported or evaluated by publications indexed as: "Meta Analysis"[pt] OR "Systematic Review"[pt] OR "Randomized Controlled Trial"[pt] OR "Clinical Trial"[pt]. Otherwise, skip the claim.
 
 **Field Specifications:**
 Each object in the `"claims"` array must contain exactly the following keys:

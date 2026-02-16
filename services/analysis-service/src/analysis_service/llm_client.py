@@ -182,18 +182,22 @@ class LLMClient:
                     return parsed, usage
                 return parsed
             except JSONDecodeError:
-                recovered = _recover_json_list(content)
-                if recovered is not None:
+                if attempt < self.max_retries:
                     logger.warning(
-                        "openai json decode recovered stage=%s items=%s",
+                        "openai json decode failed, retrying stage=%s attempt=%s/%s",
                         stage,
-                        len(recovered),
+                        attempt + 1,
+                        self.max_retries + 1,
                     )
-                    if return_usage:
-                        return recovered, usage
-                    return recovered
+                    await _sleep_backoff(self.backoff_seconds, attempt)
+                    continue
                 snippet = (content or "")[:500]
-                logger.error("openai json decode failed stage=%s content=%s", stage, snippet)
+                logger.error(
+                    "openai json decode retries exhausted stage=%s attempts=%s content=%s",
+                    stage,
+                    self.max_retries + 1,
+                    snippet,
+                )
                 raise
         raise ValueError("LLM request failed after retries")
 
@@ -218,29 +222,6 @@ def _extract_json(text: str) -> str:
     if end == -1:
         return text
     return text[start : end + 1]
-
-
-def _recover_json_list(text: str) -> list[Any] | None:
-    extracted = _extract_json(text)
-    start = extracted.find("[")
-    if start == -1:
-        return None
-    decoder = json.JSONDecoder()
-    items: list[Any] = []
-    idx = start + 1
-    length = len(extracted)
-    while idx < length:
-        while idx < length and extracted[idx] in " \t\r\n,":
-            idx += 1
-        if idx >= length or extracted[idx] == "]":
-            break
-        try:
-            item, next_idx = decoder.raw_decode(extracted, idx)
-        except JSONDecodeError:
-            break
-        items.append(item)
-        idx = next_idx
-    return items or None
 
 
 def _extract_openai_content(data: dict[str, Any]) -> str:
