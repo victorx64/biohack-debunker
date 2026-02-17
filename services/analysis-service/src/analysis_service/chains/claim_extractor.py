@@ -10,6 +10,8 @@ from ..llm_client import LLMClient
 from ..prompts.extraction import (
     CLAIM_EXTRACTION_SYSTEM_PROMPT,
     CLAIM_EXTRACTION_USER_PROMPT,
+)
+from ..prompts.search_query import (
     CLAIM_QUERY_SYSTEM_PROMPT,
     CLAIM_QUERY_USER_PROMPT,
 )
