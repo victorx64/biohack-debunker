@@ -12,6 +12,7 @@ import streamlit as st
 PASSWORD = "biohacker2026"
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000").rstrip("/")
 DEFAULT_USER_EMAIL = os.getenv("STREAMLIT_USER_EMAIL", "streamlit@local")
+NEW_ANALYSIS_MODE_KEY = "new_analysis_mode"
 
 
 st.set_page_config(page_title="Biohack Debunker", layout="wide")
@@ -48,9 +49,21 @@ def _get_query_params() -> Dict[str, Any]:
 
 
 def _set_query_params(**kwargs: str) -> None:
-    st.query_params.clear()
-    if kwargs:
-        st.query_params.update(kwargs)
+    clean_kwargs = {key: value for key, value in kwargs.items() if value is not None and value != ""}
+    existing_keys = list(st.query_params.keys())
+    for key in existing_keys:
+        del st.query_params[key]
+    for key, value in clean_kwargs.items():
+        st.query_params[key] = value
+
+
+def _get_first_query_param(params: Dict[str, Any], key: str) -> str | None:
+    value = params.get(key)
+    if isinstance(value, list):
+        return value[0] if value else None
+    if isinstance(value, str):
+        return value
+    return None
 
 
 def _verdict_emoji(verdict: str | None) -> str:
@@ -134,13 +147,18 @@ def _timestamp_to_seconds(timestamp: str | int | float | None) -> int | None:
 
 st.title("Biohack Debunker")
 params = _get_query_params()
-analysis_id = None
-if "analysis_id" in params:
-    values = params.get("analysis_id")
-    if isinstance(values, list) and values:
-        analysis_id = values[0]
-    elif isinstance(values, str):
-        analysis_id = values
+view = _get_first_query_param(params, "view")
+analysis_id = _get_first_query_param(params, "analysis_id")
+new_analysis_mode = bool(st.session_state.get(NEW_ANALYSIS_MODE_KEY, False))
+if view == "new":
+    new_analysis_mode = True
+    st.session_state[NEW_ANALYSIS_MODE_KEY] = True
+elif not new_analysis_mode and analysis_id:
+    new_analysis_mode = False
+    st.session_state[NEW_ANALYSIS_MODE_KEY] = False
+
+if new_analysis_mode:
+    analysis_id = None
 
 if analysis_id:
     st.subheader("Analysis status")
@@ -153,7 +171,7 @@ if analysis_id:
         if status in {"pending", "processing"}:
             st.info("Processing is in progress. Please refresh this page later.")
             if st.button("Refresh status"):
-                st.experimental_rerun()
+                st.rerun()
         elif status == "failed":
             st.error("Analysis failed. Please try again.")
         else:
@@ -245,8 +263,9 @@ if analysis_id:
 
     st.markdown("---")
     if st.button("Start a new analysis"):
-        _set_query_params()
-        st.experimental_rerun()
+        st.session_state[NEW_ANALYSIS_MODE_KEY] = True
+        _set_query_params(view="new")
+        st.rerun()
 else:
     st.markdown(
         """
@@ -283,9 +302,9 @@ else:
                 poll_url = response.get("poll_url")
                 st.success("Analysis started.")
                 if analysis_id:
-                    st.markdown(
-                        f"Open the results page: [View analysis](?analysis_id={analysis_id})"
-                    )
+                    st.session_state[NEW_ANALYSIS_MODE_KEY] = False
+                    _set_query_params(analysis_id=analysis_id)
+                    st.rerun()
                 # if poll_url:
                 #     st.caption(f"API status endpoint: {API_BASE_URL}{poll_url}")
                 if response.get("status") in {"pending", "processing"}:
