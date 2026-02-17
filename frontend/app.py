@@ -256,7 +256,6 @@ else:
         - extracts **medical claims** from the transcript;
         - runs targeted PubMed searches and prioritizes the most informative evidence types:
             **meta-analyses, systematic reviews, randomized controlled trials, and clinical trials**;
-        - includes only studies relevant to **human populations** (Humans);
         - produces an **evidence-based verdict** for each claim using the retrieved papers.
 
         The output is a structured, transparent, evidence-based assessment of each claim with linked sources.
