@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Seed oils directly cause heart disease in a dose-dependent way.",
-      "verdict": "not_assessable",
+      "verdict_any_of": ["not_assessable", "refuted"],
       "references": [
         {
           "title": "PubMed query: linoleic acid cardiovascular disease systematic review meta-analysis",

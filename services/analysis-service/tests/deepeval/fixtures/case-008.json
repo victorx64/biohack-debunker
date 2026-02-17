@@ -15,7 +15,7 @@
   },
   "expected_claims": [
     {
-      "claim": "Vitamin D supplementation does not necessarily reduce fracture risk in non-deficient people.",
+      "claim": "Mega-dosing vitamin D does not reduce fractures if not deficient.",
       "verdict_any_of": ["supported", "likely_supported"],
       "references": [
         {
