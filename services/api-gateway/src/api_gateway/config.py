@@ -42,6 +42,12 @@ class Settings:
         "ANALYSIS_SERVICE_URL", "http://analysis-service:8002"
     )
 
+    analysis_queue_name: str = os.getenv("ANALYSIS_QUEUE_NAME", "analysis_jobs")
+    analysis_dlq_name: str = os.getenv("ANALYSIS_DLQ_NAME", "analysis_jobs_dlq")
+    analysis_max_retries: int = _env_int("ANALYSIS_MAX_RETRIES", 2)
+    analysis_retry_backoff_seconds: int = _env_int("ANALYSIS_RETRY_BACKOFF_SECONDS", 5)
+    analysis_worker_poll_timeout: int = _env_int("ANALYSIS_WORKER_POLL_TIMEOUT", 5)
+
     rate_limit_requests: int = _env_int("RATE_LIMIT_REQUESTS", 120)
     rate_limit_window: int = _env_int("RATE_LIMIT_WINDOW", 60)
 

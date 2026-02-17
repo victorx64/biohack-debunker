@@ -31,48 +31,44 @@ class Orchestrator:
     ) -> None:
         set_analysis_id(str(analysis_id))
         await update_analysis_status(pool, analysis_id, "processing")
-        try:
-            downstream_headers = correlation_headers(request_id=request_id, correlation_id=correlation_id)
-            downstream_headers["X-Analysis-ID"] = str(analysis_id)
+        downstream_headers = correlation_headers(request_id=request_id, correlation_id=correlation_id)
+        downstream_headers["X-Analysis-ID"] = str(analysis_id)
 
-            transcription = await self._fetch_transcription(request.youtube_url, downstream_headers)
-            await update_transcription(
-                pool,
-                analysis_id,
-                transcription["transcript"],
-                transcription["video"],
-            )
+        transcription = await self._fetch_transcription(request.youtube_url, downstream_headers)
+        await update_transcription(
+            pool,
+            analysis_id,
+            transcription["transcript"],
+            transcription["video"],
+        )
 
-            analysis = await self._fetch_analysis(
-                transcription.get("segments") or [],
-                request,
-                downstream_headers,
-            )
-            claims = self._map_claims(analysis.get("claims", []))
-            await insert_claims_and_sources(pool, analysis_id, claims)
-            completed_at = datetime.utcnow()
-            costs = analysis.get("costs") or {}
-            observe_pubmed_calls(int(costs.get("pubmed_requests") or 0), endpoint="/analyze")
-            observe_llm_tokens("prompt", int(costs.get("llm_prompt_tokens") or 0))
-            observe_llm_tokens("completion", int(costs.get("llm_completion_tokens") or 0))
-            observe_llm_tokens("report_prompt", int(costs.get("report_prompt_tokens") or 0))
-            observe_llm_tokens("report_completion", int(costs.get("report_completion_tokens") or 0))
-            await update_results(
-                pool,
-                analysis_id,
-                analysis.get("summary"),
-                analysis.get("overall_rating"),
-                completed_at,
-                int(costs.get("pubmed_requests") or 0),
-                int(costs.get("llm_prompt_tokens") or 0),
-                int(costs.get("llm_completion_tokens") or 0),
-                int(costs.get("report_prompt_tokens") or 0),
-                int(costs.get("report_completion_tokens") or 0),
-            )
-            logger.info("analysis_orchestration_completed")
-        except Exception:
-            await update_analysis_status(pool, analysis_id, "failed")
-            raise
+        analysis = await self._fetch_analysis(
+            transcription.get("segments") or [],
+            request,
+            downstream_headers,
+        )
+        claims = self._map_claims(analysis.get("claims", []))
+        await insert_claims_and_sources(pool, analysis_id, claims)
+        completed_at = datetime.utcnow()
+        costs = analysis.get("costs") or {}
+        observe_pubmed_calls(int(costs.get("pubmed_requests") or 0), endpoint="/analyze")
+        observe_llm_tokens("prompt", int(costs.get("llm_prompt_tokens") or 0))
+        observe_llm_tokens("completion", int(costs.get("llm_completion_tokens") or 0))
+        observe_llm_tokens("report_prompt", int(costs.get("report_prompt_tokens") or 0))
+        observe_llm_tokens("report_completion", int(costs.get("report_completion_tokens") or 0))
+        await update_results(
+            pool,
+            analysis_id,
+            analysis.get("summary"),
+            analysis.get("overall_rating"),
+            completed_at,
+            int(costs.get("pubmed_requests") or 0),
+            int(costs.get("llm_prompt_tokens") or 0),
+            int(costs.get("llm_completion_tokens") or 0),
+            int(costs.get("report_prompt_tokens") or 0),
+            int(costs.get("report_completion_tokens") or 0),
+        )
+        logger.info("analysis_orchestration_completed")
 
     async def _fetch_transcription(self, youtube_url: str, headers: dict[str, str]) -> dict:
         url = f"{self._settings.transcription_service_url.rstrip('/')}/transcription"

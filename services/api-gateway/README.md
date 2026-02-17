@@ -10,6 +10,8 @@ results in PostgreSQL and enforcing rate limits via Redis.
 - `REDIS_URL`
 - `TRANSCRIPTION_SERVICE_URL`
 - `ANALYSIS_SERVICE_URL`
+- `ANALYSIS_QUEUE_NAME`, `ANALYSIS_DLQ_NAME`
+- `ANALYSIS_MAX_RETRIES`, `ANALYSIS_RETRY_BACKOFF_SECONDS`, `ANALYSIS_WORKER_POLL_TIMEOUT`
 - `RATE_LIMIT_REQUESTS`, `RATE_LIMIT_WINDOW`
 - `ENABLE_PUBLIC_FEED`, `ENABLE_BILLING`, `FREE_TIER_CREDITS`
 
@@ -17,6 +19,12 @@ results in PostgreSQL and enforcing rate limits via Redis.
 
 ```bash
 uvicorn api_gateway.main:app --host 0.0.0.0 --port 8000
+```
+
+Run worker:
+
+```bash
+python3 -m api_gateway.worker
 ```
 
 ## Curl examples

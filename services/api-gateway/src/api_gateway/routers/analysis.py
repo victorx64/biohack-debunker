@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Dict, List
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 
 from ..db import (
     fetch_analysis,
@@ -26,6 +26,7 @@ from ..schemas import (
     SourceInfo,
     VideoInfo,
 )
+from ..services.analysis_queue import AnalysisJob
 
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
@@ -39,7 +40,6 @@ router = APIRouter(prefix="/analysis", tags=["analysis"])
 )
 async def create_analysis(
     payload: AnalysisCreateRequest,
-    background_tasks: BackgroundTasks,
     request: Request,
 ) -> AnalysisCreateResponse:
     settings = request.app.state.settings
@@ -70,14 +70,14 @@ async def create_analysis(
     )
     set_analysis_id(str(analysis_id))
 
-    orchestrator = request.app.state.orchestrator
-    background_tasks.add_task(
-        orchestrator.run_analysis,
-        pool,
-        analysis_id,
-        payload,
-        request_id=getattr(request.state, "request_id", None),
-        correlation_id=getattr(request.state, "correlation_id", None),
+    queue = request.app.state.analysis_queue
+    await queue.enqueue(
+        AnalysisJob(
+            analysis_id=str(analysis_id),
+            request=payload.model_dump(),
+            request_id=getattr(request.state, "request_id", None),
+            correlation_id=getattr(request.state, "correlation_id", None),
+        )
     )
 
     return AnalysisCreateResponse(

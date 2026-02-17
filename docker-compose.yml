@@ -16,11 +16,49 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       TRANSCRIPTION_SERVICE_URL: ${TRANSCRIPTION_SERVICE_URL:-http://transcription-service:8001}
       ANALYSIS_SERVICE_URL: ${ANALYSIS_SERVICE_URL:-http://analysis-service:8002}
+      ANALYSIS_QUEUE_NAME: ${ANALYSIS_QUEUE_NAME:-analysis_jobs}
+      ANALYSIS_DLQ_NAME: ${ANALYSIS_DLQ_NAME:-analysis_jobs_dlq}
+      ANALYSIS_MAX_RETRIES: ${ANALYSIS_MAX_RETRIES:-2}
+      ANALYSIS_RETRY_BACKOFF_SECONDS: ${ANALYSIS_RETRY_BACKOFF_SECONDS:-5}
+      ANALYSIS_WORKER_POLL_TIMEOUT: ${ANALYSIS_WORKER_POLL_TIMEOUT:-5}
       RATE_LIMIT_REQUESTS: ${RATE_LIMIT_REQUESTS:-10}
       RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-3600}
       ENABLE_PUBLIC_FEED: ${ENABLE_PUBLIC_FEED:-true}
       ENABLE_BILLING: ${ENABLE_BILLING:-false}
       FREE_TIER_CREDITS: ${FREE_TIER_CREDITS:-3}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      transcription-service:
+        condition: service_started
+      analysis-service:
+        condition: service_started
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+
+  analysis-worker:
+    build: ./services/api-gateway
+    command: ["python", "-m", "api_gateway.worker"]
+    env_file:
+      - .env
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-biohack_debunker}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure-password}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      TRANSCRIPTION_SERVICE_URL: ${TRANSCRIPTION_SERVICE_URL:-http://transcription-service:8001}
+      ANALYSIS_SERVICE_URL: ${ANALYSIS_SERVICE_URL:-http://analysis-service:8002}
+      ANALYSIS_QUEUE_NAME: ${ANALYSIS_QUEUE_NAME:-analysis_jobs}
+      ANALYSIS_DLQ_NAME: ${ANALYSIS_DLQ_NAME:-analysis_jobs_dlq}
+      ANALYSIS_MAX_RETRIES: ${ANALYSIS_MAX_RETRIES:-2}
+      ANALYSIS_RETRY_BACKOFF_SECONDS: ${ANALYSIS_RETRY_BACKOFF_SECONDS:-5}
+      ANALYSIS_WORKER_POLL_TIMEOUT: ${ANALYSIS_WORKER_POLL_TIMEOUT:-5}
     depends_on:
       migrate:
         condition: service_completed_successfully

@@ -13,6 +13,7 @@ from .redis_client import create_redis
 from .routers import analysis as analysis_router
 from .routers import feed as feed_router
 from .routers import health as health_router
+from .services.analysis_queue import AnalysisQueue
 from .services.orchestrator import Orchestrator
 
 
@@ -26,6 +27,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         timeout=httpx.Timeout(30.0, read=300.0)
     )
     app.state.orchestrator = Orchestrator(app.state.http_client, settings)
+    app.state.analysis_queue = AnalysisQueue(
+        client=app.state.redis,
+        queue_name=settings.analysis_queue_name,
+        dlq_name=settings.analysis_dlq_name,
+    )
     try:
         yield
     finally:
