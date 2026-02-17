@@ -112,6 +112,8 @@ Notes:
 - `DEEPEVAL_RESEARCH_MAX_RESULTS_OVERRIDE` (optional: force `research_max_results` for all cases)
 - `DEEPEVAL_OUTPUT_DIR` (optional but recommended: directory to save raw analysis-service responses for debugging)
 - `DEEPEVAL_METRICS_REPORT_PATH` (optional: explicit path for aggregate `metrics_summary.json`; if omitted, uses `DEEPEVAL_OUTPUT_DIR/metrics_summary.json` when `DEEPEVAL_OUTPUT_DIR` is set, otherwise `outputs/metrics_summary.json`)
+- `DEEPEVAL_PYTEST_WORKERS` (default: `auto`; used by `pytest -n` in `docker-compose.deepeval.yml`)
+- `DEEPEVAL_RUN_ID` (optional: shared run ID for worker-safe metrics merge; auto-generated in compose command)
 
 ## Docker compose
 
@@ -119,10 +121,30 @@ The `deepeval-analysis` service in docker-compose.deepeval.yml runs these tests 
 from the base docker-compose.yml. Make sure your .env provides LLM credentials for both the analysis
 service and DeepEval.
 
+### Rebuild requirement after service code changes
+
+If you changed service code (for example in `analysis-service`, `research-service`, `api-gateway`, or shared code used by them),
+rebuild compose services before running DeepEval tests:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.deepeval.yml build analysis-service deepeval-analysis
+```
+
+`deepeval-analysis` now runs with pytest-xdist (`pytest -n ...`) and merges per-case metrics into one final
+`metrics_summary.json` at session end.
+
 Run:
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.deepeval.yml run --rm deepeval-analysis
+```
+
+Limit parallelism (example: 4 workers):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.deepeval.yml run --rm \
+  -e DEEPEVAL_PYTEST_WORKERS=4 \
+  deepeval-analysis
 ```
 
 Run a single case:

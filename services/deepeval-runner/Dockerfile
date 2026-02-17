@@ -1,5 +1,5 @@
 FROM python:3.12-slim
 
-RUN pip install --no-cache-dir pytest httpx deepeval
+RUN pip install --no-cache-dir pytest pytest-xdist httpx deepeval
 
 WORKDIR /app

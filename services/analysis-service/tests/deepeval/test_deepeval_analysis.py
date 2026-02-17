@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import time
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
@@ -15,6 +16,7 @@ from deepeval.test_case import LLMTestCase
 
 DEFAULT_DATASET_SOURCE = Path(__file__).with_name("fixtures")
 DEFAULT_REPORT_OUTPUT_DIR = Path(__file__).with_name("outputs")
+CASE_METRICS_DIRNAME = ".case_metrics"
 ALLOWED_VERDICTS = {
     "supported",
     "likely_supported",
@@ -142,8 +144,6 @@ class MetricsAccumulator:
             "cases": self.case_summaries,
         }
 
-
-_METRICS_ACCUMULATOR = MetricsAccumulator()
 _ENTAILMENT_CACHE: dict[tuple[str, str, str, bool], bool] = {}
 
 
@@ -516,10 +516,90 @@ def _report_path() -> Path:
     return DEFAULT_REPORT_OUTPUT_DIR / "metrics_summary.json"
 
 
+def _run_id() -> str:
+    explicit = os.getenv("DEEPEVAL_RUN_ID", "").strip()
+    if explicit:
+        return explicit
+    xdist_run_id = os.getenv("PYTEST_XDIST_TESTRUNUID", "").strip()
+    if xdist_run_id:
+        return xdist_run_id
+    fallback = f"local-{int(time.time())}"
+    os.environ.setdefault("DEEPEVAL_RUN_ID", fallback)
+    return os.getenv("DEEPEVAL_RUN_ID", fallback)
+
+
+def _case_metrics_dir() -> Path:
+    return _report_path().parent / CASE_METRICS_DIRNAME / _run_id()
+
+
+def _write_case_metrics(case_id: str, payload: dict[str, Any]) -> None:
+    target_dir = _case_metrics_dir()
+    target_dir.mkdir(parents=True, exist_ok=True)
+    safe_id = case_id.replace("/", "-")
+    worker_id = os.getenv("PYTEST_XDIST_WORKER", "master")
+    file_path = target_dir / f"{safe_id}__{worker_id}.json"
+    file_path.write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
+
+
+def _collect_case_metrics_records() -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    metrics_dir = _case_metrics_dir()
+    if not metrics_dir.exists():
+        return records
+    for case_file in sorted(metrics_dir.glob("*.json")):
+        try:
+            records.append(json.loads(case_file.read_text(encoding="utf-8")))
+        except Exception:
+            continue
+    return records
+
+
+def _build_aggregate_report(records: list[dict[str, Any]]) -> dict[str, Any]:
+    accumulator = MetricsAccumulator()
+    for record in records:
+        extraction = record.get("extraction") or {}
+        accumulator.add_extraction_counts(
+            tp=int(extraction.get("tp", 0)),
+            fp=int(extraction.get("fp", 0)),
+            fn=int(extraction.get("fn", 0)),
+        )
+        for observation in record.get("veracity_observations") or []:
+            expected = str(observation.get("expected") or "").strip().lower()
+            actual = str(observation.get("actual") or "").strip().lower()
+            if expected not in ALLOWED_VERDICTS or actual not in ALLOWED_VERDICTS:
+                continue
+            accumulator.add_veracity_observation(
+                expected=expected,
+                actual=actual,
+                is_correct=bool(observation.get("is_correct", False)),
+            )
+        accumulator.invalid_actual_verdicts += int(record.get("invalid_actual_verdicts", 0))
+        accumulator.invalid_expected_verdicts += int(record.get("invalid_expected_verdicts", 0))
+        summary = record.get("summary")
+        if isinstance(summary, dict):
+            accumulator.add_case_summary(summary)
+    return accumulator.to_report()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _prepare_case_metrics_dir() -> Any:
+    if os.getenv("PYTEST_XDIST_WORKER"):
+        yield
+        return
+    target_dir = _case_metrics_dir()
+    if target_dir.exists():
+        shutil.rmtree(target_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    yield
+
+
 @pytest.fixture(scope="session", autouse=True)
 def _write_metrics_report_at_session_end() -> Any:
     yield
-    report = _METRICS_ACCUMULATOR.to_report()
+    if os.getenv("PYTEST_XDIST_WORKER"):
+        return
+    records = _collect_case_metrics_records()
+    report = _build_aggregate_report(records)
     report_path = _report_path()
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, ensure_ascii=True, indent=2), encoding="utf-8")
@@ -572,13 +652,11 @@ def test_deepeval_analysis(case: dict[str, Any]) -> None:
         model_name,
     )
     pairs = match_result.pairs
-    _METRICS_ACCUMULATOR.add_extraction_counts(
-        tp=len(pairs),
-        fp=len(match_result.extra_actual),
-        fn=len(match_result.missing_expected),
-    )
 
     failure_messages: list[str] = []
+    veracity_observations: list[dict[str, Any]] = []
+    invalid_actual_verdicts = 0
+    invalid_expected_verdicts = 0
     if match_result.missing_expected:
         missing_descriptions = [
             str(item.get("claim") or "<missing claim text>") for item in match_result.missing_expected
@@ -598,14 +676,14 @@ def test_deepeval_analysis(case: dict[str, Any]) -> None:
             expected_primary = _expected_primary_verdict(expected)
             expected_allowed = _expected_verdict_values(expected)
         except AssertionError as exc:
-            _METRICS_ACCUMULATOR.invalid_expected_verdicts += 1
+            invalid_expected_verdicts += 1
             failure_messages.append(
                 f"invalid expected verdict for claim index {index}: {exc}"
             )
             continue
 
         if actual_norm not in ALLOWED_VERDICTS:
-            _METRICS_ACCUMULATOR.invalid_actual_verdicts += 1
+            invalid_actual_verdicts += 1
             failure_messages.append(
                 "actual verdict is not a supported enum value\n"
                 f"claim: {actual.get('claim')}\n"
@@ -615,10 +693,12 @@ def test_deepeval_analysis(case: dict[str, Any]) -> None:
             continue
 
         is_verdict_correct = actual_norm in expected_allowed
-        _METRICS_ACCUMULATOR.add_veracity_observation(
-            expected=expected_primary,
-            actual=actual_norm,
-            is_correct=is_verdict_correct,
+        veracity_observations.append(
+            {
+                "expected": expected_primary,
+                "actual": actual_norm,
+                "is_correct": is_verdict_correct,
+            }
         )
 
         if not is_verdict_correct:
@@ -646,18 +726,31 @@ def test_deepeval_analysis(case: dict[str, Any]) -> None:
         except AssertionError as exc:
             failure_messages.append(f"deepeval assertion failed for claim index {index}: {exc}")
 
-    _METRICS_ACCUMULATOR.add_case_summary(
-        {
-            "case_id": str(case.get("id") or "case"),
-            "expected_claims": len(expected_claims),
-            "actual_claims": len(actual_claims),
-            "matched_claims": len(pairs),
-            "missing_claims": len(match_result.missing_expected),
-            "extra_claims": len(match_result.extra_actual),
-            "evaluated_veracity_claims": min(len(pairs), max_claims),
-            "status": "failed" if failure_messages else "passed",
-            "failure_count": len(failure_messages),
-        }
+    case_id = str(case.get("id") or "case")
+    _write_case_metrics(
+        case_id=case_id,
+        payload={
+            "case_id": case_id,
+            "extraction": {
+                "tp": len(pairs),
+                "fp": len(match_result.extra_actual),
+                "fn": len(match_result.missing_expected),
+            },
+            "veracity_observations": veracity_observations,
+            "invalid_actual_verdicts": invalid_actual_verdicts,
+            "invalid_expected_verdicts": invalid_expected_verdicts,
+            "summary": {
+                "case_id": case_id,
+                "expected_claims": len(expected_claims),
+                "actual_claims": len(actual_claims),
+                "matched_claims": len(pairs),
+                "missing_claims": len(match_result.missing_expected),
+                "extra_claims": len(match_result.extra_actual),
+                "evaluated_veracity_claims": min(len(pairs), max_claims),
+                "status": "failed" if failure_messages else "passed",
+                "failure_count": len(failure_messages),
+            },
+        },
     )
 
     if failure_messages:

@@ -10,6 +10,9 @@ services:
       - .env
     environment:
       ANALYSIS_BASE_URL: ${ANALYSIS_BASE_URL:-http://analysis-service:8002}
-    command: pytest services/analysis-service/tests/deepeval/test_deepeval_analysis.py
+      DEEPEVAL_PYTEST_WORKERS: ${DEEPEVAL_PYTEST_WORKERS:-auto}
+    command: >
+      sh -lc 'export DEEPEVAL_RUN_ID=$${DEEPEVAL_RUN_ID:-$$(date +%s)} &&
+      pytest -n $${DEEPEVAL_PYTEST_WORKERS:-auto} services/analysis-service/tests/deepeval/test_deepeval_analysis.py'
     depends_on:
       - analysis-service
