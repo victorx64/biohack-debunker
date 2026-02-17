@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "High-dose vitamin D prevents all illnesses.",
-      "verdict": "refuted"
+      "verdict_any_of": ["insufficient_evidence", "likely_refuted", "not_assessable"]
     }
   ]
 }

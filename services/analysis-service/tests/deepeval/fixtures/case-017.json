@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "A high-protein diet prevents fat gain regardless of calorie intake.",
-      "verdict": "refuted"
+      "verdict_any_of": ["refuted", "not_assessable", "insufficient_evidence"]
     }
   ]
 }

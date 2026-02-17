@@ -15,7 +15,7 @@
   },
   "expected_claims": [
     {
-      "claim": "Magnesium supplementation may improve sleep outcomes in some populations, especially with low intake.",
+      "claim": "Magnesium can help some people with sleep if intake is low.",
       "verdict_any_of": ["likely_supported", "insufficient_evidence", "not_assessable"],
       "references": [
         {

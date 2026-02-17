@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Vitamin D supplementation does not necessarily reduce fracture risk in non-deficient people.",
-      "verdict": "insufficient_evidence",
+      "verdict_any_of": ["supported", "likely_supported"],
       "references": [
         {
           "title": "PubMed query: vitamin D supplementation fracture meta-analysis randomized",

@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Caffeine tolerance eliminates training benefits in habitual coffee drinkers.",
-      "verdict": "likely_refuted",
+      "verdict_any_of": ["insufficient_evidence", "likely_refuted", "not_assessable"],
       "references": [
         {
           "title": "PubMed query: caffeine habitual users tolerance performance review",

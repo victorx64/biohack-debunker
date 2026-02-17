@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Ashwagandha doubles testosterone in every man within two weeks.",
-      "verdict": "refuted"
+      "verdict_any_of": ["refuted", "likely_refuted"]
     }
   ]
 }

@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Cold plunges build more muscle because they boost recovery.",
-      "verdict_any_of": ["refuted", "likely_refuted"],
+      "verdict_any_of": ["likely_refuted", "refuted"],
       "references": [
         {
           "title": "PubMed query: cold water immersion resistance training hypertrophy review",

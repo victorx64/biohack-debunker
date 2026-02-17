@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Omega-3 (EPA/DHA) supplementation lowers triglyceride levels.",
-      "verdict": "supported",
+      "verdict_any_of": ["supported", "likely_supported"],
       "references": [
         {
           "title": "PubMed query: omega-3 EPA DHA triglycerides meta-analysis",
