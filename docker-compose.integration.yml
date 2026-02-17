@@ -15,3 +15,53 @@ services:
         condition: service_started
       analysis-worker:
         condition: service_started
+
+  itest-analysis-service:
+    build:
+      context: ./services/test-runner
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      ANALYSIS_BASE_URL: ${ANALYSIS_BASE_URL:-http://analysis-service:8002}
+      ANALYSIS_REQUIRE_LLM: ${ANALYSIS_REQUIRE_LLM:-0}
+    command: pytest -q services/analysis-service/tests/integration/test_analysis.py
+    depends_on:
+      analysis-service:
+        condition: service_started
+
+  itest-research-service:
+    build:
+      context: ./services/test-runner
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      RESEARCH_BASE_URL: ${RESEARCH_BASE_URL:-http://research-service:8003}
+      RESEARCH_REQUIRE_REAL: ${RESEARCH_REQUIRE_REAL:-0}
+    command: pytest -q services/research-service/tests/integration/test_research.py
+    depends_on:
+      research-service:
+        condition: service_started
+
+  itest-transcription-service:
+    build:
+      context: ./services/test-runner
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      TRANSCRIPTION_BASE_URL: ${TRANSCRIPTION_BASE_URL:-http://transcription-service:8001}
+      TRANSCRIPTION_TEST_URL: ${TRANSCRIPTION_TEST_URL:-mock://video}
+    command: pytest -q services/transcription-service/tests/integration/test_transcription.py
+    depends_on:
+      transcription-service:
+        condition: service_started
+
+  transcription-service:
+    build:
+      context: ./services/transcription-service
+      dockerfile: Dockerfile.test
+    command: ["uvicorn", "transcription_service.main:app", "--host", "0.0.0.0", "--port", "8001"]
+    environment:
+      YTDLP_BIN: /app/tests/mock-yt-dlp

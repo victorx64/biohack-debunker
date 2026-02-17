@@ -21,6 +21,9 @@ def _wait_for_terminal_state(
     last_payload: dict | None = None
     while time.time() < deadline:
         response = client.get(f"{BASE_URL}/api/v1/analysis/{analysis_id}")
+        if response.status_code == 429:
+            time.sleep(1.0)
+            continue
         response.raise_for_status()
         payload = response.json()
         last_payload = payload
