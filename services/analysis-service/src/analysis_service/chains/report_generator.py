@@ -23,6 +23,7 @@ async def generate_report(
         REPORT_SYSTEM_PROMPT,
         payload,
         trace={"claims_total": len(claims)},
+        stage="report",
     )
     if not isinstance(data, dict):
         raise RuntimeError("LLM response missing report fields")

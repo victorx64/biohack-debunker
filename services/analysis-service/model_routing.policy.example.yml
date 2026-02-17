@@ -1,0 +1,64 @@
+version: 1
+
+defaults:
+  per_model_max_retries: 1
+  backoff_seconds: 0.3
+  backoff_multiplier: 3.0
+  max_fallbacks_per_stage: 2
+  timeout_seconds: 30
+  read_timeout_seconds: 120
+  fallback_on:
+    http_status: [429, 500, 502, 503, 504]
+    exceptions:
+      - read_timeout
+      - connect_timeout
+      - transport_error
+      - empty_content
+      - invalid_json
+      - schema_validation_error
+
+stages:
+  extraction:
+    route:
+      - provider: openai
+        model: gpt-4.1-mini
+      - provider: openai
+        model: gpt-4.1
+
+  adjudication:
+    route:
+      - provider: openai
+        model: gpt-4.1
+      - provider: openai
+        model: gpt-4.1-mini
+
+  report:
+    route:
+      - provider: openai
+        model: gpt-4.1
+      - provider: openai
+        model: gpt-4.1-mini
+
+observability:
+  log_fields:
+    - analysis_id
+    - correlation_id
+    - stage
+    - provider_selected
+    - model_selected
+    - attempt
+    - fallback_used
+    - fallback_reason
+    - latency_ms
+    - token_in
+    - token_out
+    - estimated_cost_usd
+
+guardrails:
+  quality:
+    extraction_f1_min: 0.70
+    veracity_accuracy_min: 0.75
+    veracity_macro_f1_min: 0.65
+  drift_limits:
+    p95_latency_increase_pct_max: 25
+    estimated_cost_increase_pct_max: 20

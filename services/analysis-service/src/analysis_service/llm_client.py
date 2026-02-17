@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import os
 from json import JSONDecodeError
 from dataclasses import dataclass
 from typing import Any
@@ -29,6 +28,8 @@ class LLMClient:
         read_timeout: float | None = None,
         max_retries: int = 2,
         backoff_seconds: float = 0.5,
+        stage_routes: dict[str, list["LLMRoute"]] | None = None,
+        max_fallbacks_per_stage: int = 2,
     ) -> None:
         self.provider = provider
         self.model = model
@@ -41,10 +42,25 @@ class LLMClient:
         self.read_timeout = read_timeout or timeout
         self.max_retries = max_retries
         self.backoff_seconds = backoff_seconds
+        self.max_fallbacks_per_stage = max_fallbacks_per_stage
+        self.stage_routes = {
+            key: value[: self.max_fallbacks_per_stage + 1]
+            for key, value in (stage_routes or {}).items()
+            if value
+        }
+        self.default_route = LLMRoute(
+            provider=self.provider,
+            model=self.model,
+            api_key=self.api_key,
+            base_url=self.base_url,
+        )
 
     @property
     def enabled(self) -> bool:
-        return self.provider == "openai" and bool(self.model) and bool(self.api_key)
+        routes = [self.default_route]
+        for stage_routes in self.stage_routes.values():
+            routes.extend(stage_routes)
+        return any(route.enabled for route in routes)
 
     async def generate_json(
         self,
@@ -52,17 +68,17 @@ class LLMClient:
         user_prompt: str,
         *,
         trace: dict[str, Any] | None = None,
+        stage: str | None = None,
     ) -> Any:
         if not self.enabled:
             raise RuntimeError("LLM client is not configured")
-        if self.provider == "openai":
-            return await self._openai_json(
-                system_prompt,
-                user_prompt,
-                trace,
-                return_usage=False,
-            )
-        raise RuntimeError(f"Unsupported provider: {self.provider}")
+        return await self._generate_with_routes(
+            system_prompt,
+            user_prompt,
+            trace=trace,
+            return_usage=False,
+            stage=stage,
+        )
 
     async def generate_json_with_usage(
         self,
@@ -70,17 +86,70 @@ class LLMClient:
         user_prompt: str,
         *,
         trace: dict[str, Any] | None = None,
+        stage: str | None = None,
     ) -> tuple[Any, "LLMUsage"]:
         if not self.enabled:
             raise RuntimeError("LLM client is not configured")
-        if self.provider == "openai":
-            return await self._openai_json(
-                system_prompt,
-                user_prompt,
-                trace,
-                return_usage=True,
-            )
-        raise RuntimeError(f"Unsupported provider: {self.provider}")
+        result = await self._generate_with_routes(
+            system_prompt,
+            user_prompt,
+            trace=trace,
+            return_usage=True,
+            stage=stage,
+        )
+        if not isinstance(result, tuple):
+            raise RuntimeError("LLM usage is unavailable for this request")
+        return result
+
+    async def _generate_with_routes(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        *,
+        trace: dict[str, Any] | None,
+        return_usage: bool,
+        stage: str | None,
+    ) -> Any | tuple[Any, "LLMUsage"]:
+        selected_stage = stage or _stage_from_system_prompt(system_prompt)
+        stage_routes = self.stage_routes.get(selected_stage)
+        routes = stage_routes or [self.default_route]
+        if not routes:
+            raise RuntimeError("No LLM routes configured")
+        fallback_reason: str | None = None
+        max_index = min(len(routes) - 1, self.max_fallbacks_per_stage)
+        for route_index in range(max_index + 1):
+            route = routes[route_index]
+            fallback_used = route_index > 0
+            if not route.enabled:
+                fallback_reason = "route_not_configured"
+                continue
+            try:
+                if route.provider == "openai":
+                    return await self._openai_json(
+                        system_prompt,
+                        user_prompt,
+                        trace,
+                        return_usage=return_usage,
+                        route=route,
+                        stage=selected_stage,
+                        fallback_used=fallback_used,
+                        fallback_reason=fallback_reason,
+                    )
+                raise RuntimeError(f"Unsupported provider: {route.provider}")
+            except Exception as exc:
+                fallback_reason = _fallback_reason(exc)
+                if route_index < max_index:
+                    logger.warning(
+                        "llm fallback route selected stage=%s provider_selected=%s model_selected=%s fallback_used=%s fallback_reason=%s",
+                        selected_stage,
+                        route.provider,
+                        route.model,
+                        True,
+                        fallback_reason,
+                    )
+                    continue
+                raise
+        raise RuntimeError("LLM request failed before route execution")
 
     async def _openai_json(
         self,
@@ -88,11 +157,18 @@ class LLMClient:
         user_prompt: str,
         trace: dict[str, Any] | None = None,
         return_usage: bool = False,
+        route: "LLMRoute" | None = None,
+        stage: str | None = None,
+        fallback_used: bool = False,
+        fallback_reason: str | None = None,
     ) -> Any | tuple[Any, "LLMUsage"]:
-        url = f"{self.base_url}/chat/completions"
-        headers = {"Authorization": f"Bearer {self.api_key}"}
+        selected_route = route or self.default_route
+        if not selected_route.enabled:
+            raise RuntimeError("LLM route is not configured")
+        url = f"{selected_route.base_url}/chat/completions"
+        headers = {"Authorization": f"Bearer {selected_route.api_key}"}
         payload = {
-            "model": self.model,
+            "model": selected_route.model,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
@@ -106,12 +182,15 @@ class LLMClient:
         }
         if self.response_format:
             payload["response_format"] = self.response_format
-        stage = _stage_from_system_prompt(system_prompt)
+        selected_stage = stage or _stage_from_system_prompt(system_prompt)
 
         logger.info(
-            "openai request prompts provider=%s model=%s trace=%s system_prompt=%s user_prompt=%s",
-            self.provider,
-            self.model,
+            "openai request prompts stage=%s provider_selected=%s model_selected=%s fallback_used=%s fallback_reason=%s trace=%s system_prompt=%s user_prompt=%s",
+            selected_stage,
+            selected_route.provider,
+            selected_route.model,
+            fallback_used,
+            fallback_reason,
             trace or {},
             _truncate_for_log(system_prompt),
             _truncate_for_log(user_prompt),
@@ -126,24 +205,46 @@ class LLMClient:
                     data = response.json()
             except httpx.HTTPStatusError as exc:
                 body = (exc.response.text or "")[:500]
-                logger.error("openai request failed status=%s body=%s", exc.response.status_code, body)
+                logger.error(
+                    "openai request failed stage=%s provider_selected=%s model_selected=%s attempt=%s fallback_used=%s fallback_reason=%s status=%s body=%s",
+                    selected_stage,
+                    selected_route.provider,
+                    selected_route.model,
+                    attempt + 1,
+                    fallback_used,
+                    fallback_reason,
+                    exc.response.status_code,
+                    body,
+                )
                 if attempt < self.max_retries and _should_retry_status(exc.response.status_code):
                     await _sleep_backoff(self.backoff_seconds, attempt)
                     continue
                 raise
             except httpx.ReadTimeout:
                 logger.warning(
-                    "openai request timed out stage=%s attempt=%s/%s",
-                    stage,
+                    "openai request timed out stage=%s provider_selected=%s model_selected=%s attempt=%s/%s fallback_used=%s fallback_reason=%s",
+                    selected_stage,
+                    selected_route.provider,
+                    selected_route.model,
                     attempt + 1,
                     self.max_retries + 1,
+                    fallback_used,
+                    fallback_reason,
                 )
                 if attempt < self.max_retries:
                     await _sleep_backoff(self.backoff_seconds, attempt)
                     continue
                 raise
             except Exception:
-                logger.exception("openai request failed")
+                logger.exception(
+                    "openai request failed stage=%s provider_selected=%s model_selected=%s attempt=%s fallback_used=%s fallback_reason=%s",
+                    selected_stage,
+                    selected_route.provider,
+                    selected_route.model,
+                    attempt + 1,
+                    fallback_used,
+                    fallback_reason,
+                )
                 if attempt < self.max_retries:
                     await _sleep_backoff(self.backoff_seconds, attempt)
                     continue
@@ -154,12 +255,14 @@ class LLMClient:
                 choice = (data.get("choices") or [{}])[0] or {}
                 response_snippet = json.dumps(data, ensure_ascii=True)[:800]
                 logger.error(
-                    "openai response missing content stage=%s provider=%s model=%s attempt=%s "
+                    "openai response missing content stage=%s provider_selected=%s model_selected=%s attempt=%s fallback_used=%s fallback_reason=%s "
                     "finish_reason=%s choice_keys=%s trace=%s response=%s",
-                    stage,
-                    self.provider,
-                    self.model,
+                    selected_stage,
+                    selected_route.provider,
+                    selected_route.model,
                     attempt + 1,
+                    fallback_used,
+                    fallback_reason,
                     choice.get("finish_reason"),
                     list(choice.keys()),
                     trace or {},
@@ -170,9 +273,13 @@ class LLMClient:
                     continue
                 raise ValueError("LLM returned empty content")
             logger.info(
-                "openai response content provider=%s model=%s trace=%s content=%s",
-                self.provider,
-                self.model,
+                "openai response content stage=%s provider_selected=%s model_selected=%s attempt=%s fallback_used=%s fallback_reason=%s trace=%s content=%s",
+                selected_stage,
+                selected_route.provider,
+                selected_route.model,
+                attempt + 1,
+                fallback_used,
+                fallback_reason,
                 trace or {},
                 _truncate_for_log(content),
             )
@@ -184,18 +291,26 @@ class LLMClient:
             except JSONDecodeError:
                 if attempt < self.max_retries:
                     logger.warning(
-                        "openai json decode failed, retrying stage=%s attempt=%s/%s",
-                        stage,
+                        "openai json decode failed, retrying stage=%s provider_selected=%s model_selected=%s attempt=%s/%s fallback_used=%s fallback_reason=%s",
+                        selected_stage,
+                        selected_route.provider,
+                        selected_route.model,
                         attempt + 1,
                         self.max_retries + 1,
+                        fallback_used,
+                        fallback_reason,
                     )
                     await _sleep_backoff(self.backoff_seconds, attempt)
                     continue
                 snippet = (content or "")[:500]
                 logger.error(
-                    "openai json decode retries exhausted stage=%s attempts=%s content=%s",
-                    stage,
+                    "openai json decode retries exhausted stage=%s provider_selected=%s model_selected=%s attempts=%s fallback_used=%s fallback_reason=%s content=%s",
+                    selected_stage,
+                    selected_route.provider,
+                    selected_route.model,
                     self.max_retries + 1,
+                    fallback_used,
+                    fallback_reason,
                     snippet,
                 )
                 raise
@@ -206,6 +321,18 @@ class LLMClient:
 class LLMUsage:
     prompt_tokens: int = 0
     completion_tokens: int = 0
+
+
+@dataclass(frozen=True)
+class LLMRoute:
+    provider: str
+    model: str | None
+    api_key: str | None
+    base_url: str | None
+
+    @property
+    def enabled(self) -> bool:
+        return self.provider == "openai" and bool(self.model) and bool(self.api_key) and bool(self.base_url)
 
 def _extract_json(text: str) -> str:
     object_start = text.find("{")
@@ -263,3 +390,19 @@ def _stage_from_system_prompt(system_prompt: str) -> str:
     if len(compact) <= _LOG_STAGE_MAX_CHARS:
         return compact
     return f"{compact[:_LOG_STAGE_MAX_CHARS]}..."
+
+
+def _fallback_reason(exc: Exception) -> str:
+    if isinstance(exc, httpx.ReadTimeout):
+        return "read_timeout"
+    if isinstance(exc, httpx.ConnectTimeout):
+        return "connect_timeout"
+    if isinstance(exc, httpx.HTTPStatusError):
+        return f"http_{exc.response.status_code}"
+    if isinstance(exc, JSONDecodeError):
+        return "invalid_json"
+    if isinstance(exc, ValueError):
+        return "invalid_response"
+    if isinstance(exc, httpx.HTTPError):
+        return "transport_error"
+    return exc.__class__.__name__.lower()

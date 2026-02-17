@@ -54,6 +54,11 @@ def _env_int(name: str, default: int) -> int:
         return default
 
 
+def _env_csv(name: str) -> list[str]:
+    value = os.getenv(name, "")
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
 def _join_url(base: str, path: str) -> str:
     return f"{base.rstrip('/')}/{path.lstrip('/')}"
 
@@ -74,9 +79,46 @@ LLM_RETRY_BACKOFF = _env_float("LLM_RETRY_BACKOFF", 0.5)
 LLM_TIMEOUT = _env_float("LLM_TIMEOUT", 30.0)
 LLM_READ_TIMEOUT = _env_float("LLM_READ_TIMEOUT", 120.0)
 LLM_RESPONSE_FORMAT = os.getenv("LLM_RESPONSE_FORMAT", "").strip().lower()
+LLM_MAX_FALLBACKS = _env_int("LLM_MAX_FALLBACKS", 2)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL") or "https://api.openai.com/v1"
+
+
+def _build_stage_routes() -> dict[str, list[tuple[str, str]]]:
+    stage_routes: dict[str, list[tuple[str, str]]] = {}
+    for stage in ("extraction", "adjudication", "report"):
+        primary = os.getenv(f"LLM_MODEL_{stage.upper()}") or LLM_MODEL
+        fallback_models = _env_csv(f"LLM_MODEL_{stage.upper()}_FALLBACKS")
+        ordered_models = [model for model in [primary, *fallback_models] if model]
+        unique_models: list[str] = []
+        for model in ordered_models:
+            if model not in unique_models:
+                unique_models.append(model)
+        if unique_models:
+            stage_routes[stage] = [(LLM_PROVIDER, model) for model in unique_models]
+    return stage_routes
+
+
+def _build_llm_stage_route_objects() -> dict[str, list["LLMRoute"]]:
+    from .llm_client import LLMRoute
+
+    stage_routes = _build_stage_routes()
+    route_objects: dict[str, list[LLMRoute]] = {}
+    for stage, routes in stage_routes.items():
+        route_objects[stage] = [
+            LLMRoute(
+                provider=provider,
+                model=model,
+                api_key=OPENAI_API_KEY if provider == "openai" else None,
+                base_url=OPENAI_BASE_URL if provider == "openai" else None,
+            )
+            for provider, model in routes
+        ]
+    return route_objects
+
+
+LLM_STAGE_ROUTES = _build_llm_stage_route_objects()
 
 
 @asynccontextmanager
@@ -96,12 +138,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         read_timeout=LLM_READ_TIMEOUT,
         max_retries=LLM_MAX_RETRIES,
         backoff_seconds=LLM_RETRY_BACKOFF,
+        stage_routes=LLM_STAGE_ROUTES,
+        max_fallbacks_per_stage=LLM_MAX_FALLBACKS,
     )
     app.state.http_client = httpx.AsyncClient(timeout=30)
     logger.info(
-        "analysis service starting provider=%s model=%s research_url=%s max_concurrent_research=%s",
+        "analysis service starting provider=%s model=%s stage_routes=%s max_fallbacks_per_stage=%s research_url=%s max_concurrent_research=%s",
         LLM_PROVIDER or "(unset)",
         LLM_MODEL or "(unset)",
+        {stage: [route.model for route in routes] for stage, routes in LLM_STAGE_ROUTES.items()},
+        LLM_MAX_FALLBACKS,
         RESEARCH_ENDPOINT,
         MAX_CONCURRENT_RESEARCH,
     )

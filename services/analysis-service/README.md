@@ -14,6 +14,29 @@ and uses an LLM to produce an analysis summary.
 - `GET /health` returns service status and LLM configuration.
 - `POST /analyze` analyzes a transcript and returns claim-level results.
 
+## Model routing and fallback env
+
+Global defaults:
+
+- `LLM_PROVIDER`
+- `LLM_MODEL`
+- `LLM_MAX_RETRIES`
+- `LLM_RETRY_BACKOFF`
+- `LLM_MAX_FALLBACKS`
+
+Per-stage overrides (optional):
+
+- `LLM_MODEL_EXTRACTION`
+- `LLM_MODEL_EXTRACTION_FALLBACKS` (comma-separated)
+- `LLM_MODEL_ADJUDICATION`
+- `LLM_MODEL_ADJUDICATION_FALLBACKS` (comma-separated)
+- `LLM_MODEL_REPORT`
+- `LLM_MODEL_REPORT_FALLBACKS` (comma-separated)
+
+When per-stage variables are set, the service routes each stage (`extraction`,
+`adjudication`, `report`) through stage-specific model chains and falls back
+automatically on retryable failures.
+
 ## Example curls
 
 ```bash

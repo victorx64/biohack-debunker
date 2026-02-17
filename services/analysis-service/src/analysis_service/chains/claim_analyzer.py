@@ -34,6 +34,7 @@ async def analyze_claim(
                 "claims_total": claims_total,
                 "claim_preview": claim[:120],
             },
+            stage="adjudication",
         )
         return _coerce_analysis(data), usage
     else:

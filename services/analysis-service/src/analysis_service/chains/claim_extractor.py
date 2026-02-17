@@ -52,6 +52,7 @@ async def extract_claims(
                 extraction_system_prompt,
                 extraction_payload,
                 trace={"chunk": index, "chunks_total": len(chunks)},
+                stage="extraction",
             )
             claims = _coerce_claims(extracted_data)
             if not claims:
@@ -71,6 +72,7 @@ async def extract_claims(
                         "stage": "search_query",
                         "attempt": attempt,
                     },
+                    stage="extraction",
                 )
                 _reset_search_queries(claims)
                 _apply_search_queries(claims, query_data)
