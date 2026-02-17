@@ -27,6 +27,20 @@ Run worker:
 python3 -m api_gateway.worker
 ```
 
+## Integration tests
+
+Run gateway integration tests via Docker Compose service:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.integration.yml run --rm --build itest-api-gateway
+```
+
+Optional environment overrides:
+
+- `GATEWAY_BASE_URL` (default `http://api-gateway:8000`)
+- `GATEWAY_TEST_USER_EMAIL` (default `integration@test.local`)
+- `GATEWAY_POLL_TIMEOUT_S` (default `180`)
+
 ## Curl examples
 
 ```bash

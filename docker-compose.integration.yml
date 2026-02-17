@@ -1,0 +1,17 @@
+services:
+  itest-api-gateway:
+    build:
+      context: ./services/test-runner
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      GATEWAY_BASE_URL: ${GATEWAY_BASE_URL:-http://api-gateway:8000}
+      GATEWAY_TEST_USER_EMAIL: ${GATEWAY_TEST_USER_EMAIL:-integration@test.local}
+      GATEWAY_POLL_TIMEOUT_S: ${GATEWAY_POLL_TIMEOUT_S:-180}
+    command: pytest -q services/api-gateway/tests/integration/test_gateway.py
+    depends_on:
+      api-gateway:
+        condition: service_started
+      analysis-worker:
+        condition: service_started
