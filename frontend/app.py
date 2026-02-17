@@ -15,7 +15,7 @@ DEFAULT_USER_EMAIL = os.getenv("STREAMLIT_USER_EMAIL", "streamlit@local")
 NEW_ANALYSIS_MODE_KEY = "new_analysis_mode"
 
 
-st.set_page_config(page_title="Biohack Debunker", layout="wide")
+st.set_page_config(page_title="Biohack Debunker")
 
 
 def _api_url(path: str) -> str:
@@ -145,6 +145,10 @@ def _timestamp_to_seconds(timestamp: str | int | float | None) -> int | None:
     return hours * 3600 + minutes * 60 + seconds
 
 
+if st.button("Start a new analysis", key="start_new_analysis_top"):
+    st.session_state[NEW_ANALYSIS_MODE_KEY] = True
+    _set_query_params(view="new")
+    st.rerun()
 st.title("Biohack Debunker")
 params = _get_query_params()
 view = _get_first_query_param(params, "view")
@@ -176,14 +180,17 @@ if analysis_id:
             st.error("Analysis failed. Please try again.")
         else:
             video = analysis.get("video") or {}
-            st.subheader(video.get("title") or "Video analysis")
+            video_title = video.get("title") or "Video analysis"
+            quoted_title = f'"{video_title}"'
+            if video.get("youtube_id"):
+                video_url = f"https://www.youtube.com/watch?v={video.get('youtube_id')}"
+                st.markdown(f"## [{quoted_title}]({video_url})")
+            else:
+                st.subheader(quoted_title)
             if video.get("thumbnail_url"):
                 st.image(video.get("thumbnail_url"), width=320)
             if video.get("channel"):
                 st.caption(f"Channel: {video.get('channel')}")
-            if video.get("youtube_id"):
-                video_url = f"https://www.youtube.com/watch?v={video.get('youtube_id')}"
-                st.markdown(f"[Open on YouTube]({video_url})")
             if video.get("duration"):
                 st.caption(f"Duration: {video.get('duration')} sec")
 
@@ -195,7 +202,7 @@ if analysis_id:
             rating = analysis.get("overall_rating")
             if rating:
                 st.markdown("### Overall rating")
-                st.write(rating)
+                st.write(_verdict_label(rating))
 
             claims = analysis.get("claims") or []
             if claims:
@@ -346,7 +353,7 @@ else:
                     if video_info.get("duration"):
                         details.append(f"Duration: {video_info.get('duration')} sec")
                     if item.get("overall_rating"):
-                        details.append(f"Rating: {item.get('overall_rating')}")
+                        details.append(f"Rating: {_verdict_label(item.get('overall_rating'))}")
                     if details:
                         st.caption(" • ".join(details))
 
