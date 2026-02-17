@@ -8,12 +8,20 @@ from typing import List
 from fastapi import FastAPI, HTTPException
 import redis.asyncio as redis
 
+from .observability import (
+    configure_logging,
+    metrics_response,
+    observability_middleware,
+    observe_pubmed_calls,
+)
 from .pubmed_client import PubMedClient
 from .schemas import HealthResponse, ResearchRequest, ResearchResponse, ResearchSource
 from .vector_store import CacheStore
 
 
 app = FastAPI(title="Research Service", version="0.1.0")
+configure_logging("research-service")
+app.middleware("http")(observability_middleware)
 logger = logging.getLogger(__name__)
 
 CACHE_TTL_SECONDS = int(os.getenv("RESEARCH_CACHE_TTL_SECONDS", "3600"))
@@ -50,6 +58,11 @@ async def health() -> HealthResponse:
     )
 
 
+@app.get("/metrics")
+async def metrics():
+    return metrics_response()
+
+
 @app.post("/research", response_model=ResearchResponse)
 async def research(request: ResearchRequest) -> ResearchResponse:
     start = time.perf_counter()
@@ -82,6 +95,7 @@ async def research(request: ResearchRequest) -> ResearchResponse:
         if "pubmed" in sources:
             results.extend(await pubmed_client.search(effective_query, request.max_results))
             pubmed_requests = 1
+            observe_pubmed_calls(pubmed_requests, endpoint="/research")
     except Exception as exc:
         logger.exception(
             "Research request failed: query=%r sources=%s max_results=%s error_type=%s error=%s",

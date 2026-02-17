@@ -8,12 +8,21 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator, List
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 
 from .chains.claim_analyzer import analyze_claim, fetch_research
 from .chains.claim_extractor import extract_claims
 from .chains.report_generator import generate_report
 from .llm_client import LLMClient
+from .observability import (
+    configure_logging,
+    correlation_headers,
+    metrics_response,
+    observability_middleware,
+    observe_llm_tokens,
+    observe_pubmed_calls,
+    set_analysis_id,
+)
 from .schemas import (
     AnalysisCosts,
     AnalysisRequest,
@@ -54,10 +63,6 @@ RESEARCH_ENDPOINT = _join_url(RESEARCH_SERVICE_BASE, "/research")
 MAX_CONCURRENT_RESEARCH = _env_int("ANALYSIS_MAX_CONCURRENT_RESEARCH", 5)
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
-logging.basicConfig(
-    level=LOG_LEVEL,
-    format="%(asctime)s %(levelname)s %(name)s %(message)s",
-)
 logger = logging.getLogger("analysis_service")
 
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "").strip().lower()
@@ -107,6 +112,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="Analysis Service", version="0.1.0", lifespan=lifespan)
+configure_logging("analysis-service")
+app.middleware("http")(observability_middleware)
+
+
+@app.get("/metrics")
+async def metrics():
+    return metrics_response()
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -119,9 +131,10 @@ async def health() -> HealthResponse:
 
 
 @app.post("/analyze", response_model=AnalysisResponse)
-async def analyze(request: AnalysisRequest) -> AnalysisResponse:
+async def analyze(request: AnalysisRequest, http_request: Request) -> AnalysisResponse:
     start = time.perf_counter()
     warnings: List[str] = []
+    set_analysis_id(getattr(http_request.state, "analysis_id", None))
 
     logger.info(
         "analyze request segments=%s claims_per_chunk=%s chunk_size_chars=%s research_max_results=%s sources=%s",
@@ -170,6 +183,7 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
                     claim.search_query,
                     request.research_max_results,
                     request.research_sources,
+                    headers=correlation_headers(),
                 )
         except Exception as exc:
             warnings.append(f"Research lookup failed for claim: {claim.claim[:80]} ({exc})")
@@ -222,13 +236,21 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
     total_completion_tokens = sum(item.costs.llm_completion_tokens for item in results)
     total_prompt_tokens += report_usage.prompt_tokens
     total_completion_tokens += report_usage.completion_tokens
+    observe_pubmed_calls(total_pubmed, endpoint="/research")
+    observe_llm_tokens("prompt", total_prompt_tokens)
+    observe_llm_tokens("completion", total_completion_tokens)
+    observe_llm_tokens("report_prompt", report_usage.prompt_tokens)
+    observe_llm_tokens("report_completion", report_usage.completion_tokens)
 
     took_ms = int((time.perf_counter() - start) * 1000)
     logger.info(
-        "analyze completed claims=%s took_ms=%s warnings=%s",
+        "analyze completed claims=%s took_ms=%s warnings=%s tokens_prompt=%s tokens_completion=%s pubmed_requests=%s",
         len(results),
         took_ms,
         len(warnings),
+        total_prompt_tokens,
+        total_completion_tokens,
+        total_pubmed,
     )
     return AnalysisResponse(
         claims=results,

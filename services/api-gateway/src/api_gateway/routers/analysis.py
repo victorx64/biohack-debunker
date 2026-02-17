@@ -15,6 +15,7 @@ from ..db import (
 )
 from ..middleware.auth import user_context_dependency
 from ..middleware.rate_limit import rate_limit_dependency
+from ..observability import set_analysis_id
 from ..schemas import (
     AnalysisCreateRequest,
     AnalysisCreateResponse,
@@ -52,6 +53,7 @@ async def create_analysis(
     if not payload.force:
         cached = await fetch_latest_analysis_by_url(pool, payload.youtube_url)
     if cached:
+        set_analysis_id(str(cached.get("id")))
         estimated_time_seconds = 0 if cached.get("status") == "completed" else 60
         return AnalysisCreateResponse(
             analysis_id=cached.get("id"),
@@ -66,9 +68,17 @@ async def create_analysis(
         payload.youtube_url,
         payload.is_public,
     )
+    set_analysis_id(str(analysis_id))
 
     orchestrator = request.app.state.orchestrator
-    background_tasks.add_task(orchestrator.run_analysis, pool, analysis_id, payload)
+    background_tasks.add_task(
+        orchestrator.run_analysis,
+        pool,
+        analysis_id,
+        payload,
+        request_id=getattr(request.state, "request_id", None),
+        correlation_id=getattr(request.state, "correlation_id", None),
+    )
 
     return AnalysisCreateResponse(
         analysis_id=analysis_id,
@@ -86,6 +96,7 @@ async def get_analysis_status(
     analysis_id: UUID,
     request: Request,
 ) -> AnalysisDetailResponse:
+    set_analysis_id(str(analysis_id))
     settings = request.app.state.settings
     rate_limit = rate_limit_dependency(settings)
     await rate_limit(request)

@@ -94,6 +94,7 @@ async def fetch_research(
     search_query: str | None,
     max_results: int,
     sources: List[str],
+    headers: dict[str, str] | None = None,
 ) -> tuple[List[EvidenceSource], dict[str, int]]:
     query = (search_query or "").strip()
     if not query:
@@ -104,7 +105,7 @@ async def fetch_research(
         "sources": sources,
     }
     try:
-        response = await client.post(research_url, json=payload)
+        response = await client.post(research_url, json=payload, headers=headers)
         response.raise_for_status()
         data = response.json()
     except httpx.HTTPStatusError as exc:

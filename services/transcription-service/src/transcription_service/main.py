@@ -9,6 +9,7 @@ from typing import AsyncIterator, List
 from fastapi import FastAPI, HTTPException
 
 from .errors import TranscriptFetchError
+from .observability import configure_logging, metrics_response, observability_middleware
 from .schemas import HealthResponse, TranscriptionRequest, TranscriptionResponse
 from .youtube_client import YouTubeClient
 from .yt_dlp_runner import ProcessYtDlpRunner
@@ -28,11 +29,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="Transcription Service", version="0.1.0", lifespan=lifespan)
+configure_logging("transcription-service")
+app.middleware("http")(observability_middleware)
 
 
 @app.get("/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
     return HealthResponse(status="healthy")
+
+
+@app.get("/metrics")
+async def metrics():
+    return metrics_response()
 
 
 @app.post("/transcription", response_model=TranscriptionResponse)

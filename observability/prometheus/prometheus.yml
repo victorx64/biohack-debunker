@@ -1,0 +1,28 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: api-gateway
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - api-gateway:8000
+
+  - job_name: analysis-service
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - analysis-service:8002
+
+  - job_name: research-service
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - research-service:8003
+
+  - job_name: transcription-service
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - transcription-service:8001

@@ -8,6 +8,7 @@ from fastapi import FastAPI
 
 from .config import Settings
 from .db import create_pool
+from .observability import configure_logging, metrics_response, observability_middleware
 from .redis_client import create_redis
 from .routers import analysis as analysis_router
 from .routers import feed as feed_router
@@ -34,7 +35,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="API Gateway", version="0.1.0", lifespan=lifespan)
+configure_logging("api-gateway")
+app.middleware("http")(observability_middleware)
 
 app.include_router(analysis_router.router, prefix="/api/v1")
 app.include_router(feed_router.router, prefix="/api/v1")
 app.include_router(health_router.router)
+
+
+@app.get("/metrics")
+async def metrics():
+    return metrics_response()
