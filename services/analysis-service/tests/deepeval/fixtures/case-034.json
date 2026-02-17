@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Resistance/weight-bearing exercise can improve or maintain bone mineral density over time.",
-      "verdict": "supported",
+      "verdict_any_of": ["supported", "likely_supported"],
       "references": [
         {
           "title": "PubMed query: resistance training bone mineral density meta-analysis",

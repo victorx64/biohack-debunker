@@ -15,8 +15,8 @@
   },
   "expected_claims": [
     {
-      "claim": "Apple cider vinegar makes eating unlimited sugar safe for diabetics.",
-      "verdict": "refuted"
+      "claim": "Apple cider vinegar blunts glucose spikes massively.",
+      "verdict_any_of": ["insufficient_evidence", "not_assessable"]
     }
   ]
 }

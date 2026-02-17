@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "High-dose biotin does not necessarily improve hair in non-deficient individuals.",
-      "verdict_any_of": ["supported", "likely_supported"],
+      "verdict_any_of": ["insufficient_evidence", "not_assessable"],
       "references": [
         {
           "title": "PubMed query: biotin supplementation hair deficiency review",

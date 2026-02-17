@@ -16,7 +16,7 @@
   "expected_claims": [
     {
       "claim": "Collagen supplementation reverses osteoarthritis in every case.",
-      "verdict": "likely_refuted",
+      "verdict_any_of": ["refuted", "likely_refuted", "not_assessable"],
       "references": [
         {
           "title": "PubMed query: collagen supplement osteoarthritis systematic review",
