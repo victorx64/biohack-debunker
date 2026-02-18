@@ -1,6 +1,5 @@
 import json
 import os
-import shutil
 import time
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
@@ -579,37 +578,6 @@ def _build_aggregate_report(records: list[dict[str, Any]]) -> dict[str, Any]:
         if isinstance(summary, dict):
             accumulator.add_case_summary(summary)
     return accumulator.to_report()
-
-
-@pytest.fixture(scope="session", autouse=True)
-def _prepare_case_metrics_dir() -> Any:
-    if os.getenv("PYTEST_XDIST_WORKER"):
-        yield
-        return
-    target_dir = _case_metrics_dir()
-    if target_dir.exists():
-        shutil.rmtree(target_dir)
-    target_dir.mkdir(parents=True, exist_ok=True)
-    yield
-
-
-@pytest.fixture(scope="session", autouse=True)
-def _write_metrics_report_at_session_end() -> Any:
-    yield
-    if os.getenv("PYTEST_XDIST_WORKER"):
-        return
-    records = _collect_case_metrics_records()
-    report = _build_aggregate_report(records)
-    report_path = _report_path()
-    report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text(json.dumps(report, ensure_ascii=True, indent=2), encoding="utf-8")
-    print(
-        "\n[deepeval] aggregate metrics | "
-        f"extraction_f1={report['claim_extraction']['f1']:.4f} | "
-        f"veracity_accuracy={report['veracity']['accuracy']:.4f} | "
-        f"veracity_macro_f1={report['veracity']['macro_f1']:.4f} | "
-        f"report={report_path}"
-    )
 
 
 @pytest.mark.parametrize("case", _load_dataset())
