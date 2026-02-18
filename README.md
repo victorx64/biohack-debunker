@@ -391,4 +391,4 @@ Stage overrides:
 
 ## License
 
-No dedicated `LICENSE` file is included yet.
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
