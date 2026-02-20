@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shutil
 import time
 from pathlib import Path
@@ -31,6 +32,151 @@ def _f1(precision: float, recall: float) -> float:
     if precision + recall <= 0:
         return 0.0
     return 2 * precision * recall / (precision + recall)
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    normalized = raw.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    return default
+
+
+def _guardrails_policy_path() -> Path:
+    explicit = os.getenv("DEEPEVAL_GUARDRAILS_POLICY_PATH", "").strip()
+    if explicit:
+        return Path(explicit)
+    return Path(__file__).resolve().parents[2] / "model_routing.policy.example.yml"
+
+
+def _parse_numeric_policy_thresholds(policy_text: str) -> dict[str, float]:
+    keys = {
+        "extraction_f1_min",
+        "veracity_accuracy_min",
+        "veracity_macro_f1_min",
+        "p95_latency_increase_pct_max",
+        "estimated_cost_increase_pct_max",
+    }
+    parsed: dict[str, float] = {}
+    line_re = re.compile(r"^\s*([a-zA-Z0-9_]+)\s*:\s*([0-9]+(?:\.[0-9]+)?)\s*$")
+    for raw_line in policy_text.splitlines():
+        match = line_re.match(raw_line)
+        if not match:
+            continue
+        key = match.group(1)
+        if key not in keys:
+            continue
+        parsed[key] = float(match.group(2))
+    return parsed
+
+
+def _guardrails_thresholds() -> dict[str, float]:
+    override_json = os.getenv("DEEPEVAL_GUARDRAILS_JSON", "").strip()
+    if override_json:
+        try:
+            payload = json.loads(override_json)
+        except json.JSONDecodeError:
+            payload = {}
+        if isinstance(payload, dict):
+            return {k: float(v) for k, v in payload.items() if isinstance(v, (int, float))}
+
+    policy_path = _guardrails_policy_path()
+    if not policy_path.exists():
+        return {}
+    try:
+        policy_text = policy_path.read_text(encoding="utf-8")
+    except OSError:
+        return {}
+    return _parse_numeric_policy_thresholds(policy_text)
+
+
+def _guardrail_gate_result(report: dict[str, Any], thresholds: dict[str, float]) -> dict[str, Any]:
+    extraction = report.get("claim_extraction") or {}
+    veracity = report.get("veracity") or {}
+    failures: list[str] = []
+    checks: dict[str, dict[str, Any]] = {}
+
+    for metric_name, observed, comparator, threshold_key in [
+        ("extraction_f1", float(extraction.get("f1", 0.0)), ">=", "extraction_f1_min"),
+        ("veracity_accuracy", float(veracity.get("accuracy", 0.0)), ">=", "veracity_accuracy_min"),
+        ("veracity_macro_f1", float(veracity.get("macro_f1", 0.0)), ">=", "veracity_macro_f1_min"),
+    ]:
+        if threshold_key not in thresholds:
+            continue
+        threshold = float(thresholds[threshold_key])
+        passed = observed >= threshold
+        checks[metric_name] = {
+            "observed": round(observed, 4),
+            "threshold": threshold,
+            "operator": comparator,
+            "passed": passed,
+        }
+        if not passed:
+            failures.append(f"{metric_name}={observed:.4f} < {threshold:.4f}")
+
+    drift_sources = [
+        (
+            "p95_latency_drift_pct",
+            "p95_latency_increase_pct_max",
+            "DEEPEVAL_P95_LATENCY_DRIFT_PCT",
+        ),
+        (
+            "estimated_cost_drift_pct",
+            "estimated_cost_increase_pct_max",
+            "DEEPEVAL_LLM_COST_DRIFT_PCT",
+        ),
+    ]
+    for metric_name, threshold_key, env_key in drift_sources:
+        if threshold_key not in thresholds:
+            continue
+        raw_observed = os.getenv(env_key, "").strip()
+        if not raw_observed:
+            checks[metric_name] = {
+                "observed": None,
+                "threshold": float(thresholds[threshold_key]),
+                "operator": "<=",
+                "passed": None,
+                "source": env_key,
+                "note": "not_provided",
+            }
+            continue
+        try:
+            observed = float(raw_observed)
+        except ValueError:
+            checks[metric_name] = {
+                "observed": raw_observed,
+                "threshold": float(thresholds[threshold_key]),
+                "operator": "<=",
+                "passed": False,
+                "source": env_key,
+                "note": "invalid_number",
+            }
+            failures.append(f"{metric_name} invalid value in {env_key}: {raw_observed!r}")
+            continue
+
+        threshold = float(thresholds[threshold_key])
+        passed = observed <= threshold
+        checks[metric_name] = {
+            "observed": round(observed, 4),
+            "threshold": threshold,
+            "operator": "<=",
+            "passed": passed,
+            "source": env_key,
+        }
+        if not passed:
+            failures.append(f"{metric_name}={observed:.4f} > {threshold:.4f}")
+
+    return {
+        "status": "passed" if not failures else "failed",
+        "thresholds_source": str(_guardrails_policy_path()),
+        "thresholds": thresholds,
+        "checks": checks,
+        "failures": failures,
+    }
 
 
 def _report_path() -> Path:
@@ -185,6 +331,13 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         return
     records = _collect_case_metrics_records()
     report = _build_report(records)
+    thresholds = _guardrails_thresholds()
+    gate_result = _guardrail_gate_result(report, thresholds)
+    report["quality_gate"] = gate_result
+
+    enforce_default = os.getenv("CI", "").strip().lower() in {"1", "true", "yes", "on"}
+    enforce_gate = _env_bool("DEEPEVAL_ENFORCE_GUARDRAILS", enforce_default)
+
     report_path = _report_path()
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, ensure_ascii=True, indent=2), encoding="utf-8")
@@ -195,3 +348,17 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         f"veracity_macro_f1={report['veracity']['macro_f1']:.4f} | "
         f"report={report_path}"
     )
+    if gate_result["checks"]:
+        print(
+            "[deepeval] quality gate | "
+            f"status={gate_result['status']} | "
+            f"enforced={enforce_gate} | "
+            f"source={gate_result['thresholds_source']}"
+        )
+    else:
+        print("[deepeval] quality gate | status=skipped | reason=no_thresholds_loaded")
+
+    if enforce_gate and gate_result["status"] == "failed":
+        for failure in gate_result["failures"]:
+            print(f"[deepeval] quality gate failure | {failure}")
+        session.exitstatus = 1

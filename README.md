@@ -174,6 +174,8 @@ LLM stages are explicitly separated:
 - p95 latency drift: `<= 25%` vs baseline
 - LLM cost drift: `<= 20%` vs baseline
 
+These thresholds are defined in [services/analysis-service/model_routing.policy.example.yml](services/analysis-service/model_routing.policy.example.yml) and are evaluated by DeepEval aggregate reporting (`quality_gate` in `metrics_summary.json`). In CI, set `DEEPEVAL_ENFORCE_GUARDRAILS=1` (or rely on `CI=true`) to fail the run on threshold regressions.
+
 ---
 
 ## API surface
@@ -294,6 +296,20 @@ RESEARCH_REQUIRE_REAL=1 make test-integration-research
 
 ```bash
 make test-deepeval
+```
+
+Strict gate (fails on guardrail regressions):
+
+```bash
+make test-deepeval-strict
+```
+
+Strict gate with explicit drift inputs (example):
+
+```bash
+DEEPEVAL_P95_LATENCY_DRIFT_PCT=18 \
+DEEPEVAL_LLM_COST_DRIFT_PCT=12 \
+make test-deepeval-strict
 ```
 
 Run a single case:

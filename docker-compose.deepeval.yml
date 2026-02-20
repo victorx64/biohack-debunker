@@ -11,6 +11,10 @@ services:
     environment:
       ANALYSIS_BASE_URL: ${ANALYSIS_BASE_URL:-http://analysis-service:8002}
       DEEPEVAL_PYTEST_WORKERS: ${DEEPEVAL_PYTEST_WORKERS:-auto}
+      DEEPEVAL_GUARDRAILS_POLICY_PATH: ${DEEPEVAL_GUARDRAILS_POLICY_PATH:-/app/services/analysis-service/model_routing.policy.example.yml}
+      DEEPEVAL_ENFORCE_GUARDRAILS: ${DEEPEVAL_ENFORCE_GUARDRAILS:-}
+      DEEPEVAL_P95_LATENCY_DRIFT_PCT: ${DEEPEVAL_P95_LATENCY_DRIFT_PCT:-}
+      DEEPEVAL_LLM_COST_DRIFT_PCT: ${DEEPEVAL_LLM_COST_DRIFT_PCT:-}
     command: >
       sh -lc 'export DEEPEVAL_RUN_ID=$${DEEPEVAL_RUN_ID:-$$(date +%s)} &&
       pytest -n $${DEEPEVAL_PYTEST_WORKERS:-auto} services/analysis-service/tests/deepeval/test_deepeval_analysis.py'

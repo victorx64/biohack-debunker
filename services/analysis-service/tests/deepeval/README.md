@@ -101,7 +101,6 @@ Notes:
 - `ANALYSIS_BASE_URL` (default: http://analysis-service:8002)
 - `DEEPEVAL_DATASET_PATH` (default: fixtures/analysis_dataset.json)
 - `DEEPEVAL_MODEL` (default: gpt-4o-mini)
-- `DEEPEVAL_VERDICT_THRESHOLD` (default: 0.8)
 - `DEEPEVAL_FAITHFULNESS_THRESHOLD` (default: 0.5)
 - `DEEPEVAL_CLAIM_MATCH_THRESHOLD` (default: 0.6)
 - `DEEPEVAL_CLAIM_MATCH_MODE` (default: `entailment`; supported: `entailment`/`hybrid`/`similarity`)
@@ -114,6 +113,25 @@ Notes:
 - `DEEPEVAL_METRICS_REPORT_PATH` (optional: explicit path for aggregate `metrics_summary.json`; if omitted, uses `DEEPEVAL_OUTPUT_DIR/metrics_summary.json` when `DEEPEVAL_OUTPUT_DIR` is set, otherwise `outputs/metrics_summary.json`)
 - `DEEPEVAL_PYTEST_WORKERS` (default: `auto`; used by `pytest -n` in `docker-compose.deepeval.yml`)
 - `DEEPEVAL_RUN_ID` (optional: shared run ID for worker-safe metrics merge; auto-generated in compose command)
+- `DEEPEVAL_GUARDRAILS_POLICY_PATH` (default: `services/analysis-service/model_routing.policy.example.yml`)
+- `DEEPEVAL_ENFORCE_GUARDRAILS` (default: inherits `CI`; when enabled, run fails if policy thresholds are violated)
+- `DEEPEVAL_P95_LATENCY_DRIFT_PCT` (optional numeric input for latency drift guardrail check)
+- `DEEPEVAL_LLM_COST_DRIFT_PCT` (optional numeric input for cost drift guardrail check)
+
+### Quality gate from routing policy
+
+At session end, `conftest.py` loads guardrail thresholds from `model_routing.policy.example.yml` and
+adds `quality_gate` to `metrics_summary.json`.
+
+- Quality checks (always evaluated if thresholds are present):
+  - `claim_extraction.f1 >= extraction_f1_min`
+  - `veracity.accuracy >= veracity_accuracy_min`
+  - `veracity.macro_f1 >= veracity_macro_f1_min`
+- Drift checks (evaluated only if env values are provided):
+  - `DEEPEVAL_P95_LATENCY_DRIFT_PCT <= p95_latency_increase_pct_max`
+  - `DEEPEVAL_LLM_COST_DRIFT_PCT <= estimated_cost_increase_pct_max`
+
+When `DEEPEVAL_ENFORCE_GUARDRAILS=1` (or `CI=true`), any failed check marks the pytest run as failed.
 
 ## Docker compose
 
@@ -137,6 +155,20 @@ Run:
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.deepeval.yml run --rm deepeval-analysis
+```
+
+Strict guardrails gate via Makefile helper:
+
+```bash
+make test-deepeval-strict
+```
+
+Optional explicit drift inputs:
+
+```bash
+DEEPEVAL_P95_LATENCY_DRIFT_PCT=18 \
+DEEPEVAL_LLM_COST_DRIFT_PCT=12 \
+make test-deepeval-strict
 ```
 
 Limit parallelism (example: 4 workers):
