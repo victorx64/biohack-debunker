@@ -22,7 +22,6 @@ Each object in output `"claims"` must contain exactly:
 - Use `OR` inside parentheses for synonyms.
 - Use `*` for wildcards when useful.
 - Use single quotes for multi-word phrases.
-- Append `AND ('Meta Analysis'[pt] OR 'Systematic Review'[pt] OR 'Randomized Controlled Trial'[pt] OR 'Clinical Trial'[pt])` only if the claim is about humans.
 
 **Example Output Structure:**
 {
